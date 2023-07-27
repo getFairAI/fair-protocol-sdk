@@ -1,0 +1,6 @@
+{
+  "src/**/*.{js,ts}": [
+    "npx eslint --fix \"src/**/*.{js,ts}\" --config ./.eslintrc.json",
+    "npx prettier --write \"src/**/*.{js,ts}\" --config ./.prettierrc"
+  ]
+}
