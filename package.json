@@ -4,11 +4,15 @@
   "description": "",
   "type": "module",
   "dependencies": {
-    "esbuild": "^0.18.17"
+    "esbuild": "^0.18.17",
+    "graphql": "^16.7.1",
+    "graphql-request": "^6.1.0",
+    "pino": "^8.14.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.4.2",
     "@commitlint/config-conventional": "^17.4.2",
+    "@types/node": "^20.4.0",
     "@typescript-eslint/eslint-plugin": "^5.59.0",
     "@typescript-eslint/parser": "^5.59.0",
     "eslint": "^8.38.0",
@@ -17,10 +21,14 @@
     "husky": "^8.0.3",
     "lint-staged": "^13.2.2",
     "prettier": "^2.8.8",
-    "@types/node": "^20.4.0",
     "typescript": "^5.1.6"
   },
   "scripts": {
+    "prepare": "husky install",
+    "lint:fix": "eslint --fix \"src/**/*.ts\"",
+    "format:fix": "prettier --write \"src/**/*.ts\" --config ./.prettierrc",
+    "lint": "eslint \"src/**/*.ts\"",
+    "format": "prettier \"src/**/*.ts\" --config ./.prettierrc",
     "test": "echo \"Error: no test specified\" && exit 1"
   }
 }
