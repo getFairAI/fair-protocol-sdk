@@ -17,14 +17,14 @@ type listOperatorsParam = string | IContractEdge | IEdge;
  * @property {string} operationScriptName - Operation script name of the operator
  */
 class FairOperator {
-  private _owner: string;
-  private _name: string;
-  private _txid: string;
-  private _raw: IContractEdge | IEdge;
-  private _timestamp: number;
-  private _fee: string;
-  private _operationScript: string;
-  private _operationScriptName: string;
+  private readonly _owner: string;
+  private readonly _name: string;
+  private readonly _txid: string;
+  private readonly _raw: IContractEdge | IEdge;
+  private readonly _timestamp: number;
+  private readonly _fee: string;
+  private readonly _operationScript: string;
+  private readonly _operationScriptName: string;
 
   constructor(tx: IContractEdge | IEdge) {
     this._owner = getTxOwner(tx);
@@ -131,7 +131,7 @@ const _listOperatorsWithScriptTx = async (scriptTx: IContractEdge | IEdge) => {
   const tags = [
     ...commonTags,
     { name: TAG_NAMES.scriptName, values: [findTag(scriptTx, 'scriptName') as string] },
-    { name: TAG_NAMES.scriptCurator, values: [findTag(scriptTx, 'scriptCurator') as string] },
+    { name: TAG_NAMES.scriptCurator, values: [getTxOwner(scriptTx)] },
   ];
 
   if (operationName === 'Script Creation Payment') {

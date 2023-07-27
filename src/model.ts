@@ -15,12 +15,12 @@ import { client, findTag, getTxOwner, isFakeDeleted } from './utils';
  * @property {number} timestamp - Timestamp of the Tx
  */
 class FairModel {
-  private _owner: string;
-  private _name: string;
-  private _txid: string;
-  private _rawTx: IContractEdge | IEdge;
-  private _paymentId: string;
-  private _timestamp: number;
+  private readonly _owner: string;
+  private readonly _name: string;
+  private readonly _txid: string;
+  private readonly _rawTx: IContractEdge | IEdge;
+  private readonly _paymentId: string;
+  private readonly _timestamp: number;
 
   constructor(tx: IContractEdge | IEdge) {
     const txid = findTag(tx, 'modelTransaction');

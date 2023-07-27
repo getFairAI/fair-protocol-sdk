@@ -23,12 +23,12 @@ type listScriptsParam = string | IContractEdge | IEdge;
  * @property {number} timestamp - Timestamp of the script
  */
 class FairScript {
-  private _owner: string;
-  private _name: string;
-  private _txid: string;
-  private _rawTx: IContractEdge | IEdge;
-  private _paymentId: string;
-  private _timestamp: number;
+  private readonly _owner: string;
+  private readonly _name: string;
+  private readonly _txid: string;
+  private readonly _rawTx: IContractEdge | IEdge;
+  private readonly _paymentId: string;
+  private readonly _timestamp: number;
 
   constructor(tx: IContractEdge | IEdge) {
     const txid = findTag(tx, 'scriptTransaction');
@@ -128,7 +128,7 @@ const _listAllScripts = async () => {
 const _listScriptsWithModelId = async (modelId: string) => {
   const tags = [
     ...DEFAULT_TAGS_RETRO,
-    ...(modelId ? [{ name: TAG_NAMES.scriptTransaction, values: [modelId] }] : []),
+    ...(modelId ? [{ name: TAG_NAMES.modelTransaction, values: [modelId] }] : []),
     ...SCRIPT_CREATION_PAYMENT_TAGS,
   ];
 
@@ -146,7 +146,7 @@ const _listScriptsWithModelTx = async (modelTx: IContractEdge | IEdge) => {
   const tags = [
     ...commonTags,
     { name: TAG_NAMES.modelName, values: [findTag(modelTx, 'modelName') as string] },
-    { name: TAG_NAMES.modelCreator, values: [findTag(modelTx, 'modelCreator') as string] },
+    { name: TAG_NAMES.modelCreator, values: [getTxOwner(modelTx)] },
   ];
 
   if (operationName === 'Model Creation Payment') {
