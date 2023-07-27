@@ -38,6 +38,10 @@ export const QUERY_TX_WITH_OWNERS = gql`
             address
             key
           }
+          tags {
+            name
+            value
+          }
         }
       }
     }
@@ -45,7 +49,7 @@ export const QUERY_TX_WITH_OWNERS = gql`
 `;
 
 export const QUERY_TX_BY_ID = gql`
-  query QUERY_TX_BY_ID($id: String!) {
+  query QUERY_TX_BY_ID($id: ID!) {
     transactions(ids: [$id], sort: HEIGHT_DESC, first: 1) {
       pageInfo {
         hasNextPage

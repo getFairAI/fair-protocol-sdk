@@ -6,16 +6,85 @@ import {
   MARKETPLACE_ADDRESS,
   MODEL_DELETION,
   NET_ARWEAVE_URL,
+  NODE2_BUNDLR_URL,
   N_PREVIOUS_BLOCKS,
   SCRIPT_DELETION,
   SCRIPT_INFERENCE_RESPONSE,
   TAG_NAMES,
   U_CONTRACT_ID,
+  U_DIVIDER,
 } from './constants';
-import { IContractEdge, IContractQueryResult, IEdge, IQueryResult, ITagFilter } from './interface';
+import {
+  IContractEdge,
+  IContractQueryResult,
+  IEdge,
+  IQueryResult,
+  ITagFilter,
+  UState,
+} from './interface';
 import { GraphQLClient } from 'graphql-request';
-import { FIND_BY_TAGS, QUERY_TX_WITH_OWNERS } from './queries';
+import { FIND_BY_TAGS, QUERY_TX_BY_ID, QUERY_TX_WITH_OWNERS } from './queries';
 import { default as Pino } from 'pino';
+import Arweave from 'arweave';
+import { JWKInterface, Tags, WarpFactory } from 'warp-contracts';
+import Bundlr from '@bundlr-network/client/build/cjs/cjsIndex';
+
+export const arweave = Arweave.init({
+  host: NET_ARWEAVE_URL.split('//')[1],
+  port: 443,
+  protocol: 'https',
+});
+
+export const JwkToAddress = async (jwk: JWKInterface) => arweave.wallets.jwkToAddress(jwk);
+
+export const getArBalance = async (address: string) => {
+  const winstonBalance = await arweave.wallets.getBalance(address);
+
+  return arweave.ar.winstonToAr(winstonBalance);
+};
+
+const warp = WarpFactory.forMainnet();
+
+const contract = warp.contract(U_CONTRACT_ID).setEvaluationOptions({
+  remoteStateSyncSource: 'https://dre-6.warp.cc/contract',
+  remoteStateSyncEnabled: true,
+  unsafeClient: 'skip',
+  allowBigInt: true,
+  internalWrites: true,
+});
+
+export const connectToU = (jwk: JWKInterface) => {
+  contract.connect(jwk);
+};
+
+export const getUBalance = async (address: string) => {
+  try {
+    const { cachedValue } = await contract.readState();
+
+    const balance = (cachedValue as UState).state.balances[address];
+
+    return parseFloat(balance) / U_DIVIDER;
+  } catch (error) {
+    return 0;
+  }
+};
+
+export const sendU = async (to: string, amount: string | number, tags: Tags) => {
+  if (typeof amount === 'number') {
+    amount = amount.toString();
+  }
+
+  const result = await contract.writeInteraction(
+    {
+      function: 'transfer',
+      target: to,
+      qty: amount,
+    },
+    { tags, strict: true },
+  );
+
+  return result?.originalTxId;
+};
 
 export const client = new GraphQLClient(
   `${NET_ARWEAVE_URL}/graphql` /* {
@@ -33,7 +102,7 @@ export const logger = Pino({
 });
 
 export const getById = async (txid: string) => {
-  const data: IQueryResult = await client.request(QUERY_TX_WITH_OWNERS, { id: txid });
+  const data: IQueryResult = await client.request(QUERY_TX_BY_ID, { id: txid });
 
   return data.transactions.edges[0];
 };
@@ -198,4 +267,11 @@ export const isValidRegistration = async (
   }
 
   return true;
+};
+
+export const initBundlr = async (jwk: JWKInterface) => {
+  const bundlr = new Bundlr(NODE2_BUNDLR_URL, 'arweave', jwk);
+  await bundlr.ready();
+
+  return bundlr;
 };
