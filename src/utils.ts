@@ -35,7 +35,7 @@ export const arweave = Arweave.init({
   protocol: 'https',
 });
 
-export const JwkToAddress = async (jwk: JWKInterface) => arweave.wallets.jwkToAddress(jwk);
+export const jwkToAddress = async (jwk: JWKInterface) => arweave.wallets.jwkToAddress(jwk);
 
 export const getArBalance = async (address: string) => {
   const winstonBalance = await arweave.wallets.getBalance(address);

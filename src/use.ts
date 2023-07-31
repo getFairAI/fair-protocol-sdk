@@ -45,6 +45,5 @@ const inferenceTestWithIds = async () => {
 };
 
 (async () => {
-  // await inferenceTest();
   await inferenceTestWithIds();
 })();

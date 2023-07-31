@@ -29,6 +29,8 @@ import { FairScript } from './script';
 import { client, findTag, getByIds, getTxOwner, logger, sendU } from './utils';
 import { Tag } from 'warp-contracts';
 
+const DEFAULT_LIMIT = 10;
+
 const handlePayment = async (
   bundlrId: string,
   inferenceFee: string,
@@ -62,25 +64,25 @@ const handlePayment = async (
   // pay operator
   const operatorPaymentTx = await sendU(
     operatorAddrr,
-    parseInt(operatorFeeShare.toString(), 10),
+    parseInt(operatorFeeShare.toString(), DEFAULT_LIMIT),
     paymentTags as Tag[],
   );
   // pay curator
   const curatorPaymentTx = await sendU(
     script.owner,
-    parseInt(curatorFeeShare.toString(), 10),
+    parseInt(curatorFeeShare.toString(), DEFAULT_LIMIT),
     paymentTags as Tag[],
   );
   // pay model creator
   const creatorPaymentTx = await sendU(
     modelCreator,
-    parseInt(creatorFeeShare.toString(), 10),
+    parseInt(creatorFeeShare.toString(), DEFAULT_LIMIT),
     paymentTags as Tag[],
   );
   // pay marketplace
   const marketplacePaymentTx = await sendU(
     VAULT_ADDRESS,
-    parseInt(marketPlaceFeeShare.toString(), 10),
+    parseInt(marketPlaceFeeShare.toString(), DEFAULT_LIMIT),
     paymentTags as Tag[],
   );
 
@@ -130,11 +132,11 @@ const getLastConversationId = async (userAddr: string, script: FairScript) => {
     ],
   });
 
-  if (data && data.transactions && data.transactions.edges && data.transactions.edges.length > 0) {
+  if (data?.transactions?.edges?.length > 0) {
     const tx = data.transactions.edges[0];
     const conversationId = findTag(tx, 'conversationIdentifier');
     if (conversationId) {
-      return parseInt(conversationId, 10);
+      return parseInt(conversationId, DEFAULT_LIMIT);
     } else {
       return 1;
     }
@@ -202,7 +204,7 @@ const getResponses = async (userAddr: string, requestIds: string[]) => {
   return data.transactions.edges;
 };
 
-const getAllResponses = async (userAddr: string, limit = 10) => {
+const getAllResponses = async (userAddr: string, limit = DEFAULT_LIMIT) => {
   const tagsResponses = [
     ...DEFAULT_TAGS_FOR_TOKENS,
     /* { name: TAG_NAMES.scriptName, values: [state.scriptName] },
@@ -212,9 +214,10 @@ const getAllResponses = async (userAddr: string, limit = 10) => {
     { name: TAG_NAMES.scriptUser, values: [userAddr] },
   ];
 
+  const responsesPerRequest = 4;
   const data: IQueryResult = await client.request(FIND_BY_TAGS, {
     tags: tagsResponses,
-    first: limit * 4, //
+    first: limit * responsesPerRequest, //
   });
 
   // get the txs requestIds
@@ -244,7 +247,7 @@ const getAllResponses = async (userAddr: string, limit = 10) => {
   return filtered;
 };
 
-const getRequests = async (userAddr: string, limit = 10) => {
+const getRequests = async (userAddr: string, limit = DEFAULT_LIMIT) => {
   const tags = [
     { name: TAG_NAMES.appName, values: [APP_NAME] },
     { name: TAG_NAMES.appVersion, values: [APP_VERSION] },

@@ -10,7 +10,7 @@ import { FairModel, listModels } from './model';
 import { FairOperator, listOperators } from './operator';
 import { FairScript, listScripts } from './script';
 import {
-  JwkToAddress,
+  jwkToAddress,
   connectToU,
   findTag,
   getArBalance,
@@ -25,6 +25,8 @@ import { getAllResponses, getRequests, getResponses, inference } from './inferen
 import { JWKInterface } from 'warp-contracts';
 
 type logLevels = 'fatal' | 'error' | 'trace' | 'debug' | 'info' | 'warn';
+
+const walletError = 'Wallet not set';
 
 export default abstract class FairSDK {
   // no constructor, only static methods
@@ -49,11 +51,11 @@ export default abstract class FairSDK {
 
   public static get address() {
     if (!this._wallet) {
-      throw new Error('Wallet not set');
+      throw new Error(walletError);
     } else {
       return (async () => {
         if (!this._address) {
-          this._address = await JwkToAddress(this._wallet);
+          this._address = await jwkToAddress(this._wallet);
         } else {
           // ignore
         }
@@ -153,10 +155,10 @@ export default abstract class FairSDK {
 
   public static getArBalance = async () => {
     if (!this._wallet) {
-      throw new Error('Wallet not set');
+      throw new Error(walletError);
     } else if (!this._address) {
       // user has not called address yet
-      this._address = await JwkToAddress(this._wallet);
+      this._address = await jwkToAddress(this._wallet);
     } else {
       // ignore
     }
@@ -166,10 +168,10 @@ export default abstract class FairSDK {
 
   public static getUBalance = async () => {
     if (!this._wallet) {
-      throw new Error('Wallet not set');
+      throw new Error(walletError);
     } else if (!this._address) {
       // user has not called address yet
-      this._address = await JwkToAddress(this._wallet);
+      this._address = await jwkToAddress(this._wallet);
     } else {
       // ignore
     }
@@ -179,7 +181,7 @@ export default abstract class FairSDK {
 
   public static prompt = async (content: string) => {
     if (!this._address || !this._wallet) {
-      throw new Error('Wallet not set');
+      throw new Error(walletError);
     }
 
     if (!this._bundlr) {
@@ -206,7 +208,7 @@ export default abstract class FairSDK {
         this._address,
         this._bundlr,
       );
-      logger.info(`Inference result: ${result}`);
+      logger.info(`Inference result: ${JSON.stringify(result)}`);
     }
   };
 }
