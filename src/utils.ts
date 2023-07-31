@@ -23,7 +23,7 @@ import {
   UState,
 } from './interface';
 import { GraphQLClient } from 'graphql-request';
-import { FIND_BY_TAGS, QUERY_TX_BY_ID, QUERY_TX_WITH_OWNERS } from './queries';
+import { FIND_BY_TAGS, QUERY_TX_BY_ID, QUERY_TX_BY_IDS, QUERY_TX_WITH_OWNERS } from './queries';
 import { default as Pino } from 'pino';
 import Arweave from 'arweave';
 import { JWKInterface, Tags, WarpFactory } from 'warp-contracts';
@@ -105,6 +105,15 @@ export const getById = async (txid: string) => {
   const data: IQueryResult = await client.request(QUERY_TX_BY_ID, { id: txid });
 
   return data.transactions.edges[0];
+};
+
+export const getByIds = async (txids: string[]) => {
+  const data: IQueryResult = await client.request(QUERY_TX_BY_IDS, {
+    ids: txids,
+    first: txids.length,
+  });
+
+  return data.transactions.edges;
 };
 
 export const isFakeDeleted = async (txid: string, owner: string, type: 'script' | 'model') => {

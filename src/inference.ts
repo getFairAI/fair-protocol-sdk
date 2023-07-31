@@ -6,20 +6,27 @@ import {
   CREATOR_PERCENTAGE_FEE,
   CURATOR_PERCENTAGE_FEE,
   DEFAULT_TAGS,
+  DEFAULT_TAGS_FOR_TOKENS,
   INFERENCE_PAYMENT,
   MARKETPLACE_PERCENTAGE_FEE,
   OPERATOR_PERCENTAGE_FEE,
   SCRIPT_INFERENCE_REQUEST,
+  SCRIPT_INFERENCE_RESPONSE,
   TAG_NAMES,
   VAULT_ADDRESS,
   secondInMS,
 } from './constants';
-import { IQueryResult, ITag } from './interface';
+import { IEdge, IQueryResult, ITag } from './interface';
 import { FairModel } from './model';
 import { FairOperator } from './operator';
-import { QUERY_TX_WITH_OWNERS } from './queries';
+import {
+  FIND_BY_TAGS,
+  QUERY_TXS_OWNERS,
+  QUERY_TXS_WITH_OWNERS,
+  QUERY_TX_WITH_OWNERS,
+} from './queries';
 import { FairScript } from './script';
-import { client, findTag, logger, sendU } from './utils';
+import { client, findTag, getByIds, getTxOwner, logger, sendU } from './utils';
 import { Tag } from 'warp-contracts';
 
 const handlePayment = async (
@@ -167,4 +174,90 @@ const inference = async (
   }
 };
 
-export { inference };
+const getResponses = async (userAddr: string, requestIds: string[]) => {
+  const ownersData: IQueryResult = await client.request(QUERY_TXS_OWNERS, {
+    ids: requestIds,
+    first: requestIds.length,
+  });
+
+  const owners = ownersData.transactions.edges.map((el: IEdge) => getTxOwner(el));
+  const tagsResponses = [
+    ...DEFAULT_TAGS_FOR_TOKENS,
+    /* { name: TAG_NAMES.scriptName, values: [state.scriptName] },
+    { name: TAG_NAMES.scriptCurator, values: [state.scriptCurator] }, */
+    { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_RESPONSE] },
+    // { name: 'Conversation-Identifier', values: [currentConversationId] },
+    { name: TAG_NAMES.scriptUser, values: [userAddr] },
+    {
+      name: TAG_NAMES.requestTransaction,
+      values: requestIds,
+    },
+  ];
+
+  const data: IQueryResult = await client.request(QUERY_TX_WITH_OWNERS, {
+    tags: tagsResponses,
+    owners,
+  });
+
+  return data.transactions.edges;
+};
+
+const getAllResponses = async (userAddr: string, limit = 10) => {
+  const tagsResponses = [
+    ...DEFAULT_TAGS_FOR_TOKENS,
+    /* { name: TAG_NAMES.scriptName, values: [state.scriptName] },
+    { name: TAG_NAMES.scriptCurator, values: [state.scriptCurator] }, */
+    { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_RESPONSE] },
+    // { name: 'Conversation-Identifier', values: [currentConversationId] },
+    { name: TAG_NAMES.scriptUser, values: [userAddr] },
+  ];
+
+  const data: IQueryResult = await client.request(FIND_BY_TAGS, {
+    tags: tagsResponses,
+    first: limit * 4, //
+  });
+
+  // get the txs requestIds
+  const requestIds = Array.from(
+    new Set(
+      data.transactions.edges.map((el: IEdge) => findTag(el, 'requestTransaction')) as string[],
+    ),
+  );
+  // get the txs
+  const requests = await getByIds(requestIds);
+
+  const filtered = [];
+  // filter responses that
+  for (const res of data.transactions.edges) {
+    // find request
+    const request = requests.find(
+      (el: IEdge) => el.node.id === findTag(res, 'requestTransaction'),
+    ) as IEdge;
+    if (getTxOwner(res) === findTag(request, 'scriptOperator')) {
+      // remove response
+      filtered.push(res);
+    } else {
+      // ignore response
+    }
+  }
+
+  return filtered;
+};
+
+const getRequests = async (userAddr: string, limit = 10) => {
+  const tags = [
+    { name: TAG_NAMES.appName, values: [APP_NAME] },
+    { name: TAG_NAMES.appVersion, values: [APP_VERSION] },
+    { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_REQUEST] },
+  ];
+
+  const data: IQueryResult = await client.request(QUERY_TXS_WITH_OWNERS, {
+    tags,
+    owners: [userAddr],
+    first: limit,
+  });
+
+  return data.transactions.edges;
+};
+
+export { inference, getResponses, getAllResponses, getRequests };

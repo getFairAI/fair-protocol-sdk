@@ -21,7 +21,7 @@ import {
 } from './utils';
 import fs from 'node:fs';
 import NodeBundlr from '@bundlr-network/client/build/cjs/node/bundlr';
-import { inference } from './inference';
+import { getAllResponses, getRequests, getResponses, inference } from './inference';
 import { JWKInterface } from 'warp-contracts';
 
 type logLevels = 'fatal' | 'error' | 'trace' | 'debug' | 'info' | 'warn';
@@ -67,6 +67,9 @@ export default abstract class FairSDK {
       listModels,
       listScripts,
       listOperators,
+      getResponses: (requestIds: string[]) => getResponses(this._address, requestIds),
+      getAllResponses: (limit: number) => getAllResponses(this._address, limit),
+      getRequests: (limit: number) => getRequests(this._address, limit),
     };
   }
 
