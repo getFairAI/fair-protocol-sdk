@@ -1,9 +1,9 @@
 // model related functionality
 // list models
-import { FIND_BY_TAGS } from './queries';
 import { DEFAULT_TAGS_RETRO, MODEL_CREATION_PAYMENT_TAGS } from './constants';
-import { IContractEdge, IContractQueryResult, IEdge } from './interface';
-import { client, findTag, getTxOwner, isFakeDeleted } from './utils';
+import { IContractEdge, IEdge } from './interface';
+import { findByTags } from './queries';
+import { findTag, getTxOwner, isFakeDeleted } from './utils';
 
 /**
  * @description Class to wrap a Fair Protocol Model tx with easy to access proeprties
@@ -65,11 +65,11 @@ const listModels = async () => {
   let hasNextPage = false;
   let requestTxs: IContractEdge[] = [];
   do {
-    const result: IContractQueryResult = await client.request(FIND_BY_TAGS, {
-      tags: [...DEFAULT_TAGS_RETRO, ...MODEL_CREATION_PAYMENT_TAGS],
-      first: 10,
-      after: hasNextPage ? requestTxs[requestTxs.length - 1].cursor : undefined,
-    });
+    const tags = [...DEFAULT_TAGS_RETRO, ...MODEL_CREATION_PAYMENT_TAGS];
+    const first = 10;
+    const after = hasNextPage ? requestTxs[requestTxs.length - 1].cursor : undefined;
+
+    const result = await findByTags(tags, first, after);
     requestTxs = requestTxs.concat(result.transactions.edges);
     hasNextPage = result.transactions.pageInfo.hasNextPage;
   } while (hasNextPage);

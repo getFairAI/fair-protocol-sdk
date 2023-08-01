@@ -1,7 +1,7 @@
 import { DEFAULT_TAGS, OPERATOR_REGISTRATION_PAYMENT_TAGS, TAG_NAMES } from './constants';
-import { IContractEdge, IContractQueryResult, IEdge, ITagFilter } from './interface';
-import { FIND_BY_TAGS } from './queries';
-import { client, findTag, getTxOwner, isValidRegistration, logger } from './utils';
+import { IContractEdge, IEdge, ITagFilter } from './interface';
+import { findByTags } from './queries';
+import { findTag, getTxOwner, isValidRegistration, logger } from './utils';
 
 type listOperatorsParam = string | IContractEdge | IEdge;
 
@@ -77,11 +77,11 @@ const _queryOperators = async (tags: ITagFilter[]) => {
   let requestTxs: IContractEdge[] = [];
   do {
     logger.debug(`Fetching operators with tags: ${JSON.stringify(tags)}`);
-    const result: IContractQueryResult = await client.request(FIND_BY_TAGS, {
-      tags,
-      first: 10,
-      after: hasNextPage ? requestTxs[requestTxs.length - 1].cursor : undefined,
-    });
+    const first = 10;
+    const after = hasNextPage ? requestTxs[requestTxs.length - 1].cursor : undefined;
+
+    const result = await findByTags(tags, first, after);
+
     requestTxs = requestTxs.concat(result.transactions.edges);
     hasNextPage = result.transactions.pageInfo.hasNextPage;
     if (hasNextPage) {

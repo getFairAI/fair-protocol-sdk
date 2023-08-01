@@ -1,8 +1,7 @@
-import { FIND_BY_TAGS } from './queries';
 import { DEFAULT_TAGS_RETRO, SCRIPT_CREATION_PAYMENT_TAGS, TAG_NAMES } from './constants';
-import { IContractEdge, IContractQueryResult, IEdge, ITagFilter } from './interface';
+import { IContractEdge, IEdge, ITagFilter } from './interface';
+import { findByTags } from './queries';
 import {
-  client,
   filterByUniqueScriptTxId,
   filterPreviousVersions,
   findTag,
@@ -76,11 +75,10 @@ const _queryScripts = async (tags: ITagFilter[]) => {
   let requestTxs: IContractEdge[] = [];
   do {
     logger.debug(`Fetching scripts with tags: ${JSON.stringify(tags)}`);
-    const result: IContractQueryResult = await client.request(FIND_BY_TAGS, {
-      tags,
-      first: 10,
-      after: hasNextPage ? requestTxs[requestTxs.length - 1].cursor : undefined,
-    });
+    const after = hasNextPage ? requestTxs[requestTxs.length - 1].cursor : undefined;
+    const first = 10;
+    const result = await findByTags(tags, first, after);
+
     requestTxs = requestTxs.concat(result.transactions.edges);
     hasNextPage = result.transactions.pageInfo.hasNextPage;
     if (hasNextPage) {

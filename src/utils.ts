@@ -14,34 +14,23 @@ import {
   U_CONTRACT_ID,
   U_DIVIDER,
 } from './constants';
-import {
-  IContractEdge,
-  IContractQueryResult,
-  IEdge,
-  IQueryResult,
-  ITagFilter,
-  UState,
-} from './interface';
-import { GraphQLClient } from 'graphql-request';
-import { FIND_BY_TAGS, QUERY_TX_BY_ID, QUERY_TX_BY_IDS, QUERY_TX_WITH_OWNERS } from './queries';
+import { IContractEdge, IEdge, ITagFilter, UState } from './interface';
+import { findByTags, getTxWithOwners } from './queries';
 import { default as Pino } from 'pino';
 import Arweave from 'arweave';
 import { JWKInterface, Tags, WarpFactory } from 'warp-contracts';
 import Bundlr from '@bundlr-network/client/build/cjs/cjsIndex';
 
-export const arweave = Arweave.init({
+export const logger = Pino({
+  name: 'Fair-SDK',
+  level: 'debug',
+});
+
+const arweave = Arweave.init({
   host: NET_ARWEAVE_URL.split('//')[1],
   port: 443,
   protocol: 'https',
 });
-
-export const jwkToAddress = async (jwk: JWKInterface) => arweave.wallets.jwkToAddress(jwk);
-
-export const getArBalance = async (address: string) => {
-  const winstonBalance = await arweave.wallets.getBalance(address);
-
-  return arweave.ar.winstonToAr(winstonBalance);
-};
 
 const warp = WarpFactory.forMainnet();
 
@@ -53,6 +42,17 @@ const contract = warp.contract(U_CONTRACT_ID).setEvaluationOptions({
   internalWrites: true,
 });
 
+// arweave functionality
+
+export const jwkToAddress = async (jwk: JWKInterface) => arweave.wallets.jwkToAddress(jwk);
+
+export const getArBalance = async (address: string) => {
+  const winstonBalance = await arweave.wallets.getBalance(address);
+
+  return arweave.ar.winstonToAr(winstonBalance);
+};
+
+// warp u funcitonality
 export const connectToU = (jwk: JWKInterface) => {
   contract.connect(jwk);
 };
@@ -86,35 +86,7 @@ export const sendU = async (to: string, amount: string | number, tags: Tags) => 
   return result?.originalTxId;
 };
 
-export const client = new GraphQLClient(
-  `${NET_ARWEAVE_URL}/graphql` /* {
-  method: `GET`,
-  jsonSerializer: {
-    parse: JSON.parse,
-    stringify: JSON.stringify,
-  }
-} */,
-);
-
-export const logger = Pino({
-  name: 'Fair-SDK',
-  level: 'debug',
-});
-
-export const getById = async (txid: string) => {
-  const data: IQueryResult = await client.request(QUERY_TX_BY_ID, { id: txid });
-
-  return data.transactions.edges[0];
-};
-
-export const getByIds = async (txids: string[]) => {
-  const data: IQueryResult = await client.request(QUERY_TX_BY_IDS, {
-    ids: txids,
-    first: txids.length,
-  });
-
-  return data.transactions.edges;
-};
+// logic functionality
 
 export const isFakeDeleted = async (txid: string, owner: string, type: 'script' | 'model') => {
   const deleteTags: ITagFilter[] = [];
@@ -129,12 +101,9 @@ export const isFakeDeleted = async (txid: string, owner: string, type: 'script' 
 
   const owners = owner ? [MARKETPLACE_ADDRESS, owner] : [MARKETPLACE_ADDRESS];
 
-  const data: IQueryResult = await client.request(QUERY_TX_WITH_OWNERS, {
-    tags: deleteTags,
-    owners,
-  });
+  const data = await getTxWithOwners(deleteTags, owners);
 
-  return data.transactions.edges.length > 0;
+  return data.length > 0;
 };
 
 type tagName = keyof typeof TAG_NAMES;
@@ -206,52 +175,50 @@ const getOperatorRequests = async (
     target: address,
     qty: qty.toString(),
   });
-  const data: IContractQueryResult = await client.request(FIND_BY_TAGS, {
-    first: N_PREVIOUS_BLOCKS,
-    tags: [
-      ...DEFAULT_TAGS,
-      { name: TAG_NAMES.contract, values: [U_CONTRACT_ID] },
-      { name: TAG_NAMES.input, values: [requestPaymentsInputNumber, requestPaymentsInputStr] },
-      { name: TAG_NAMES.operationName, values: [INFERENCE_PAYMENT] },
-      { name: TAG_NAMES.scriptName, values: [scriptName] },
-      { name: TAG_NAMES.scriptCurator, values: [scriptCurator] },
-    ],
-  });
+  const tags = [
+    ...DEFAULT_TAGS,
+    { name: TAG_NAMES.contract, values: [U_CONTRACT_ID] },
+    { name: TAG_NAMES.input, values: [requestPaymentsInputNumber, requestPaymentsInputStr] },
+    { name: TAG_NAMES.operationName, values: [INFERENCE_PAYMENT] },
+    { name: TAG_NAMES.scriptName, values: [scriptName] },
+    { name: TAG_NAMES.scriptCurator, values: [scriptCurator] },
+  ];
+  const first = N_PREVIOUS_BLOCKS;
 
-  return data.transactions.edges as IEdge[];
+  const data = await findByTags(tags, first);
+
+  return data.transactions.edges;
 };
 
-const hasOperatorAnswered = async (request: IEdge, opAddress: string) => {
-  const responseTags = [
+const hasOperatorAnswered = async (request: IEdge | IContractEdge, opAddress: string) => {
+  const responseTags: ITagFilter[] = [
     ...DEFAULT_TAGS_FOR_TOKENS,
-    { name: TAG_NAMES.requestTransaction, values: [findTag(request, 'inferenceTransaction')] },
+    {
+      name: TAG_NAMES.requestTransaction,
+      values: [findTag(request, 'inferenceTransaction') as string],
+    },
     { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_RESPONSE] },
   ];
 
-  const data: IQueryResult = await client.request(QUERY_TX_WITH_OWNERS, {
-    tags: responseTags,
-    owners: [opAddress],
-  });
+  const data: IEdge[] = await getTxWithOwners(responseTags, [opAddress]);
 
-  if (data.transactions.edges.length === 0) {
+  if (data.length === 0) {
     return false;
   } else {
     return true;
   }
 };
 
-const isCancelled = async (txid: string, opAdress: string) => {
+const isCancelled = async (txid: string, opAddress: string) => {
   const cancelTags = [
     ...DEFAULT_TAGS,
     { name: TAG_NAMES.operationName, values: [CANCEL_OPERATION] },
     { name: TAG_NAMES.registrationTransaction, values: [txid] },
   ];
-  const data: IQueryResult = await client.request(QUERY_TX_WITH_OWNERS, {
-    tags: cancelTags,
-    owners: [opAdress],
-  });
 
-  return data.transactions.edges.length > 0;
+  const data: IEdge[] = await getTxWithOwners(cancelTags, [opAddress]);
+
+  return data.length > 0;
 };
 
 export const isValidRegistration = async (
