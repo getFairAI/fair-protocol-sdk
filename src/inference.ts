@@ -16,18 +16,13 @@ import {
   VAULT_ADDRESS,
   secondInMS,
 } from './constants';
-import { IEdge, IQueryResult, ITag } from './interface';
+import { IContractEdge, IEdge, ITag } from './interface';
 import { FairModel } from './model';
 import { FairOperator } from './operator';
-import {
-  FIND_BY_TAGS,
-  QUERY_TXS_OWNERS,
-  QUERY_TXS_WITH_OWNERS,
-  QUERY_TX_WITH_OWNERS,
-} from './queries';
 import { FairScript } from './script';
-import { client, findTag, getByIds, getTxOwner, logger, sendU } from './utils';
+import { findTag, getTxOwner, logger, sendU } from './utils';
 import { Tag } from 'warp-contracts';
+import { findByTags, getByIds, getTxOwners, getTxWithOwners, getTxsWithOwners } from './queries';
 
 const DEFAULT_LIMIT = 10;
 
@@ -114,26 +109,25 @@ const getUploadTags = (script: FairScript, operatorAddr: string, conversationId:
 };
 
 const getLastConversationId = async (userAddr: string, script: FairScript) => {
-  const data: IQueryResult = await client.request(QUERY_TX_WITH_OWNERS, {
-    owners: userAddr,
-    first: 1,
-    tags: [
-      ...DEFAULT_TAGS,
-      {
-        name: TAG_NAMES.operationName,
-        values: [CONVERSATION_START],
-      },
-      {
-        name: TAG_NAMES.scriptTransaction,
-        values: [script.txid],
-      },
-      { name: TAG_NAMES.scriptName, values: [script.name] },
-      { name: TAG_NAMES.scriptCurator, values: [script.owner] },
-    ],
-  });
+  const tags = [
+    ...DEFAULT_TAGS,
+    {
+      name: TAG_NAMES.operationName,
+      values: [CONVERSATION_START],
+    },
+    {
+      name: TAG_NAMES.scriptTransaction,
+      values: [script.txid],
+    },
+    { name: TAG_NAMES.scriptName, values: [script.name] },
+    { name: TAG_NAMES.scriptCurator, values: [script.owner] },
+  ];
+  const owners = [userAddr];
 
-  if (data?.transactions?.edges?.length > 0) {
-    const tx = data.transactions.edges[0];
+  const data = await getTxWithOwners(tags, owners);
+
+  if (data?.length > 0) {
+    const tx = data[0];
     const conversationId = findTag(tx, 'conversationIdentifier');
     if (conversationId) {
       return parseInt(conversationId, DEFAULT_LIMIT);
@@ -177,12 +171,8 @@ const inference = async (
 };
 
 const getResponses = async (userAddr: string, requestIds: string[]) => {
-  const ownersData: IQueryResult = await client.request(QUERY_TXS_OWNERS, {
-    ids: requestIds,
-    first: requestIds.length,
-  });
+  const owners = await getTxOwners(requestIds);
 
-  const owners = ownersData.transactions.edges.map((el: IEdge) => getTxOwner(el));
   const tagsResponses = [
     ...DEFAULT_TAGS_FOR_TOKENS,
     /* { name: TAG_NAMES.scriptName, values: [state.scriptName] },
@@ -196,12 +186,7 @@ const getResponses = async (userAddr: string, requestIds: string[]) => {
     },
   ];
 
-  const data: IQueryResult = await client.request(QUERY_TX_WITH_OWNERS, {
-    tags: tagsResponses,
-    owners,
-  });
-
-  return data.transactions.edges;
+  return getTxWithOwners(tagsResponses, owners);
 };
 
 const getAllResponses = async (userAddr: string, limit = DEFAULT_LIMIT) => {
@@ -215,15 +200,14 @@ const getAllResponses = async (userAddr: string, limit = DEFAULT_LIMIT) => {
   ];
 
   const responsesPerRequest = 4;
-  const data: IQueryResult = await client.request(FIND_BY_TAGS, {
-    tags: tagsResponses,
-    first: limit * responsesPerRequest, //
-  });
+  const data = await findByTags(tagsResponses, limit * responsesPerRequest);
 
   // get the txs requestIds
   const requestIds = Array.from(
     new Set(
-      data.transactions.edges.map((el: IEdge) => findTag(el, 'requestTransaction')) as string[],
+      data.transactions.edges.map((el: IContractEdge) =>
+        findTag(el, 'requestTransaction'),
+      ) as string[],
     ),
   );
   // get the txs
@@ -254,13 +238,7 @@ const getRequests = async (userAddr: string, limit = DEFAULT_LIMIT) => {
     { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_REQUEST] },
   ];
 
-  const data: IQueryResult = await client.request(QUERY_TXS_WITH_OWNERS, {
-    tags,
-    owners: [userAddr],
-    first: limit,
-  });
-
-  return data.transactions.edges;
+  return getTxsWithOwners(tags, [userAddr], limit);
 };
 
 export { inference, getResponses, getAllResponses, getRequests };

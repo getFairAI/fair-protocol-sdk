@@ -14,7 +14,6 @@ import {
   connectToU,
   findTag,
   getArBalance,
-  getById,
   getUBalance,
   initBundlr,
   logger,
@@ -23,6 +22,7 @@ import fs from 'node:fs';
 import NodeBundlr from '@bundlr-network/client/build/cjs/node/bundlr';
 import { getAllResponses, getRequests, getResponses, inference } from './inference';
 import { JWKInterface } from 'warp-contracts';
+import { getById } from './queries';
 
 type logLevels = 'fatal' | 'error' | 'trace' | 'debug' | 'info' | 'warn';
 
