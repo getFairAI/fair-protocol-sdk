@@ -86,3 +86,11 @@ await FairSDK.getArBalance(); // get ar balance for the current loaded wallet
 await FairSDK.getUBalance(); // get u balance for the current loaded wallet
 await FairSDK.setWallet('./wallet-user.json'); // load wallet into sdk
 ```
+
+## Development
+
+* Run Tests
+
+```sh
+npm run test
+```
