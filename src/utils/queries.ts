@@ -1,6 +1,6 @@
 import { GraphQLClient, gql } from 'graphql-request';
 import { NET_ARWEAVE_URL } from './constants';
-import { IContractQueryResult, IEdge, IQueryResult, ITagFilter } from '../types/interface';
+import { IContractQueryResult, IEdge, IQueryResult, ITagFilter } from '../types';
 
 const client = new GraphQLClient(`${NET_ARWEAVE_URL}/graphql`);
 
