@@ -1,9 +1,5 @@
-// model related functionality
-// list models
-import { DEFAULT_TAGS_RETRO, MODEL_CREATION_PAYMENT_TAGS } from './constants';
-import { IContractEdge, IEdge } from './interface';
-import { findByTags } from './queries';
-import { findTag, getTxOwner, isFakeDeleted } from './utils';
+import { IContractEdge, IEdge } from '../types';
+import { getTxOwner, findTag } from '../utils';
 
 /**
  * @description Class to wrap a Fair Protocol Model tx with easy to access proeprties
@@ -14,7 +10,7 @@ import { findTag, getTxOwner, isFakeDeleted } from './utils';
  * @property {string} paymentId - Payment Id of the Model
  * @property {number} timestamp - Timestamp of the Tx
  */
-class FairModel {
+export class FairModel {
   private readonly _owner: string;
   private readonly _name: string;
   private readonly _txid: string;
@@ -60,31 +56,3 @@ class FairModel {
     return this._timestamp;
   }
 }
-
-const listModels = async () => {
-  let hasNextPage = false;
-  let requestTxs: IContractEdge[] = [];
-  do {
-    const tags = [...DEFAULT_TAGS_RETRO, ...MODEL_CREATION_PAYMENT_TAGS];
-    const first = 10;
-    const after = hasNextPage ? requestTxs[requestTxs.length - 1].cursor : undefined;
-
-    const result = await findByTags(tags, first, after);
-    requestTxs = requestTxs.concat(result.transactions.edges);
-    hasNextPage = result.transactions.pageInfo.hasNextPage;
-  } while (hasNextPage);
-
-  const filtered: FairModel[] = [];
-  for (const tx of requestTxs) {
-    const modelId = findTag(tx, 'modelTransaction') as string;
-    const modelOwner = findTag(tx, 'sequencerOwner') as string;
-    if (await isFakeDeleted(modelId, modelOwner, 'model')) {
-      // ignore tx
-    } else {
-      filtered.push(new FairModel(tx));
-    }
-  }
-  return filtered;
-};
-
-export { listModels, FairModel };

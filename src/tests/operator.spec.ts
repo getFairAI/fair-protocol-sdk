@@ -1,7 +1,7 @@
 import { describe, expect, test, jest } from '@jest/globals';
-import { TAG_NAMES } from '../constants';
-import { findByTags } from '../queries';
-import { listOperators } from '../operator';
+import { TAG_NAMES } from '../utils/constants';
+import { listOperators } from '../queries/operator';
+import { findByTags } from '../utils/queries';
 
 const operators = [
   {

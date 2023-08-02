@@ -1,4 +1,5 @@
-import NodeBundlr from '@bundlr-network/client/build/cjs/node/bundlr';
+import type NodeBundlr from '@bundlr-network/client/build/cjs/node/bundlr';
+import type { Tag } from 'warp-contracts';
 import {
   APP_NAME,
   APP_VERSION,
@@ -15,14 +16,20 @@ import {
   TAG_NAMES,
   VAULT_ADDRESS,
   secondInMS,
-} from './constants';
-import { IContractEdge, IEdge, ITag } from './interface';
-import { FairModel } from './model';
-import { FairOperator } from './operator';
-import { FairScript } from './script';
-import { findTag, getTxOwner, logger, sendU } from './utils';
-import { Tag } from 'warp-contracts';
-import { findByTags, getByIds, getTxOwners, getTxWithOwners, getTxsWithOwners } from './queries';
+} from '../utils/constants';
+import {
+  findByTags,
+  getByIds,
+  getTxOwners,
+  getTxWithOwners,
+  getTxsWithOwners,
+  findTag,
+  getTxOwner,
+  logger,
+  sendU,
+} from '../utils';
+import { FairModel, FairOperator, FairScript } from '../classes';
+import { IContractEdge, IEdge, ITag } from '../types';
 
 const DEFAULT_LIMIT = 10;
 

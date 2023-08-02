@@ -1,30 +1,27 @@
-import {
-  MAX_MESSAGE_SIZE,
-  MODEL_CREATION_PAYMENT,
-  REGISTER_OPERATION,
-  SCRIPT_CREATION_PAYMENT,
-  U_DIVIDER,
-} from './constants';
-import { IContractEdge, IEdge } from './interface';
-import { FairModel, listModels } from './model';
-import { FairOperator, listOperators } from './operator';
-import { FairScript, listScripts } from './script';
+import fs from 'node:fs';
+import type NodeBundlr from '@bundlr-network/client/build/cjs/node/bundlr';
+import { JWKInterface } from 'warp-contracts';
+import { getResponses, getAllResponses, getRequests, inference } from './actions';
+import { FairModel, FairScript, FairOperator } from './classes';
+import { listModels, listScripts, listOperators } from './queries';
+import { IEdge, IContractEdge, logLevels } from './types';
 import {
   jwkToAddress,
-  connectToU,
+  getById,
   findTag,
+  logger,
+  connectToU,
+  initBundlr,
   getArBalance,
   getUBalance,
-  initBundlr,
-  logger,
 } from './utils';
-import fs from 'node:fs';
-import NodeBundlr from '@bundlr-network/client/build/cjs/node/bundlr';
-import { getAllResponses, getRequests, getResponses, inference } from './inference';
-import { JWKInterface } from 'warp-contracts';
-import { getById } from './queries';
-
-type logLevels = 'fatal' | 'error' | 'trace' | 'debug' | 'info' | 'warn';
+import {
+  MODEL_CREATION_PAYMENT,
+  SCRIPT_CREATION_PAYMENT,
+  REGISTER_OPERATION,
+  MAX_MESSAGE_SIZE,
+  U_DIVIDER,
+} from './utils/constants';
 
 const walletError = 'Wallet not set';
 

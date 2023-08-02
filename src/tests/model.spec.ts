@@ -1,7 +1,7 @@
 import { describe, expect, test, jest } from '@jest/globals';
-import { listModels } from '../model';
-import { TAG_NAMES } from '../constants';
-import { findByTags } from '../queries';
+import { TAG_NAMES } from '../utils/constants';
+import { listModels } from '../queries/model';
+import { findByTags } from '../utils/queries';
 
 const models = [
   {

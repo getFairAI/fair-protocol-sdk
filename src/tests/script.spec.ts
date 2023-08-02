@@ -1,7 +1,7 @@
 import { describe, expect, test, jest } from '@jest/globals';
-import { TAG_NAMES } from '../constants';
-import { findByTags } from '../queries';
-import { listScripts } from '../script';
+import { TAG_NAMES } from '../utils/constants';
+import { findByTags } from '../utils/queries';
+import { listScripts } from '../queries/script';
 
 const scripts = [
   {
