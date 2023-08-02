@@ -23,7 +23,7 @@ import Bundlr from '@bundlr-network/client/build/cjs/cjsIndex';
 
 export const logger = Pino({
   name: 'Fair-SDK',
-  level: 'debug',
+  level: 'info',
 });
 
 const arweave = Arweave.init({
