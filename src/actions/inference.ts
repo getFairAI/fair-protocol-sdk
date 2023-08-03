@@ -1,3 +1,18 @@
+/*
+ * Copyright 2023 Fair protocol
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import type NodeBundlr from '@bundlr-network/client/build/cjs/node/bundlr';
 import type { Tag } from 'warp-contracts';
 import {
@@ -17,19 +32,19 @@ import {
   VAULT_ADDRESS,
   secondInMS,
 } from '../utils/constants';
+import { IContractEdge, IEdge, ITag } from '../types/arweave';
+import { FairModel } from '../classes/model';
+import { FairOperator } from '../classes/operator';
+import { FairScript } from '../classes/script';
+import { logger, findTag, getTxOwner } from '../utils/common';
 import {
+  getTxWithOwners,
+  getTxOwners,
   findByTags,
   getByIds,
-  getTxOwners,
-  getTxWithOwners,
   getTxsWithOwners,
-  findTag,
-  getTxOwner,
-  logger,
-  sendU,
-} from '../utils';
-import { FairModel, FairOperator, FairScript } from '../classes';
-import { IContractEdge, IEdge, ITag } from '../types';
+} from '../utils/queries';
+import { sendU } from '../utils/warp';
 
 const DEFAULT_LIMIT = 10;
 

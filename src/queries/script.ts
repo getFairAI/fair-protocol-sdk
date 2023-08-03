@@ -1,15 +1,30 @@
-import { FairScript } from '../classes';
+/*
+ * Copyright 2023 Fair protocol
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { FairScript } from '../classes/script';
 import { DEFAULT_TAGS_RETRO, SCRIPT_CREATION_PAYMENT_TAGS, TAG_NAMES } from '../utils/constants';
-import { ITagFilter, IContractEdge, IEdge, listFilterParams } from '../types';
+import { ITagFilter, IContractEdge, IEdge, listFilterParams } from '../types/arweave';
 import {
   logger,
-  findByTags,
   filterByUniqueScriptTxId,
   filterPreviousVersions,
   findTag,
   getTxOwner,
   isFakeDeleted,
-} from '../utils';
+} from '../utils/common';
+import { findByTags } from '../utils/queries';
 
 const commonTags: ITagFilter[] = [...DEFAULT_TAGS_RETRO, ...SCRIPT_CREATION_PAYMENT_TAGS];
 
@@ -36,7 +51,7 @@ const _queryScripts = async (tags: ITagFilter[]) => {
 
 const _filterScripts = async (txs: IContractEdge[]) => {
   const filtered: FairScript[] = [];
-  logger.debug('Filtering scripts');
+  logger.debug('Filtering scripts...');
   const uniqueScripts = filterByUniqueScriptTxId<IContractEdge[]>(txs);
   const filteredScritps = filterPreviousVersions<IContractEdge[]>(uniqueScripts as IContractEdge[]);
   for (const tx of filteredScritps) {
@@ -60,10 +75,7 @@ const _filterScripts = async (txs: IContractEdge[]) => {
 const _listAllScripts = async () => {
   const requestTxs = await _queryScripts(commonTags);
 
-  logger.debug('Filtering operators');
-  const filtered = await _filterScripts(requestTxs);
-
-  return filtered;
+  return _filterScripts(requestTxs);
 };
 
 const _listScriptsWithModelId = async (modelId: string) => {
@@ -75,10 +87,7 @@ const _listScriptsWithModelId = async (modelId: string) => {
 
   const requestTxs = await _queryScripts(tags);
 
-  logger.debug('Filtering operators');
-  const filtered = await _filterScripts(requestTxs);
-
-  return filtered;
+  return _filterScripts(requestTxs);
 };
 
 const _listScriptsWithModelTx = async (modelTx: IContractEdge | IEdge) => {
@@ -103,10 +112,7 @@ const _listScriptsWithModelTx = async (modelTx: IContractEdge | IEdge) => {
 
   const requestTxs = await _queryScripts(tags);
 
-  logger.debug('Filtering operators');
-  const filtered = await _filterScripts(requestTxs);
-
-  return filtered;
+  return _filterScripts(requestTxs);
 };
 
 /**

@@ -1,6 +1,27 @@
+/*
+ * Copyright 2023 Fair protocol
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * 
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import Bundlr from '@bundlr-network/client/build/cjs/cjsIndex';
 import fs from 'fs';
 import { glob } from 'glob';
+import { default as Pino } from 'pino';
+
+export const logger = Pino({
+  name: 'Fair-SDK Deploy',
+  level: 'debug',
+});
 
 const main = async () => {
   const wallet = './wallet.json';
@@ -15,26 +36,26 @@ const main = async () => {
   
   // Get loaded balance in atomic units
   const atomicBalance = await bundlr.getLoadedBalance();
-  console.log(`node balance (atomic units) = ${atomicBalance}`);
+  logger.info(`node balance (atomic units) = ${atomicBalance}`);
   
   // Convert balance to an easier to read format
   const convertedBalance = bundlr.utils.unitConverter(atomicBalance);
-  console.log(`node balance (converted) = ${convertedBalance}`);
+  logger.info(`node balance (converted) = ${convertedBalance}`);
   
   // Print your wallet address
-  console.log(`wallet address = ${bundlr.address}`);
+  logger.info(`wallet address = ${bundlr.address}`);
   // all js files, but don't look in node_modules
   const sdkFiles = await glob('**/*.tgz', { ignore: [ 'node_modules/**', 'src/**', 'dist/**' ] });
   if (sdkFiles.length > 1) {
-    console.log(`Found ${sdkFiles.length} SDK files. Please remove older versions and try again.`);
+    logger.error(`Found ${sdkFiles.length} SDK files. Please remove older versions and try again.`);
     return;
   } else if (sdkFiles.length === 0) {
-    console.log('No SDK files found. Please run `npm run build && npm pack .` first.');
+    logger.error('No SDK files found. Please run `npm run build && npm pack .` first.');
     return;
   } else {
     // continue
   }
-  console.log(`Uploading ${sdkFiles[0]}`);
+  logger.info(`Uploading ${sdkFiles[0]}`);
 
   const tags = [
     { name: 'Content-Type', value: 'application/gzip' },
@@ -46,7 +67,7 @@ const main = async () => {
   ];
 
   const response = await bundlr.uploadFile(sdkFiles[0], { tags });
-  console.log(`SDK Uploaded https://arweave.net/${response?.id}`);
+  logger.info(`SDK Uploaded https://arweave.net/${response?.id}`);
 };
 
-(async () => await main())();
+(async () => main())();

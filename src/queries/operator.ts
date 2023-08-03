@@ -1,7 +1,23 @@
-import { FairOperator } from '../classes';
+/*
+ * Copyright 2023 Fair protocol
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { FairOperator } from '../classes/operator';
 import { DEFAULT_TAGS, OPERATOR_REGISTRATION_PAYMENT_TAGS, TAG_NAMES } from '../utils/constants';
-import { IContractEdge, IEdge, ITagFilter, listFilterParams } from '../types';
-import { findTag, getTxOwner, isValidRegistration, logger, findByTags } from '../utils';
+import { IContractEdge, IEdge, ITagFilter, listFilterParams } from '../types/arweave';
+import { findByTags } from '../utils/queries';
+import { findTag, getTxOwner, isValidRegistration, logger } from '../utils/common';
 
 const commonTags = [...DEFAULT_TAGS, ...OPERATOR_REGISTRATION_PAYMENT_TAGS];
 
@@ -28,6 +44,8 @@ const _queryOperators = async (tags: ITagFilter[]) => {
 };
 
 const _filterOperators = async (txs: IContractEdge[]) => {
+  logger.debug('Filtering Operators...');
+
   const filtered: FairOperator[] = [];
   for (const tx of txs) {
     const opFee = findTag(tx, 'operatorFee') as string;
@@ -52,10 +70,7 @@ const _listOperatorsWithScriptId = async (scriptId?: string) => {
   ];
   const requestTxs = await _queryOperators(tags);
 
-  logger.debug('Filtering operators');
-  const filtered = await _filterOperators(requestTxs);
-
-  return filtered;
+  return _filterOperators(requestTxs);
 };
 
 const _listOperatorsWithScriptTx = async (scriptTx: IContractEdge | IEdge) => {
@@ -80,19 +95,13 @@ const _listOperatorsWithScriptTx = async (scriptTx: IContractEdge | IEdge) => {
 
   const requestTxs = await _queryOperators(tags);
 
-  logger.debug('Filtering operators');
-  const filtered = await _filterOperators(requestTxs);
-
-  return filtered;
+  return _filterOperators(requestTxs);
 };
 
 const _listAllOperators = async () => {
   const requestTxs = await _queryOperators(commonTags);
 
-  logger.debug('Filtering operators');
-  const filtered = await _filterOperators(requestTxs);
-
-  return filtered;
+  return _filterOperators(requestTxs);
 };
 
 /**
