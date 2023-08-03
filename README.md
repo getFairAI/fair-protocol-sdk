@@ -2,6 +2,16 @@
 
 ## Installation
 
+Install with npm from link or ARNS name
+
+```sh
+npm i https://arweave.net/DeqiMGaUsc_i1MT5QX6ccA5CDYLTc1lcUxKhHsHOquA 
+# OR
+npm i https://fairprotocolsdk.arweave.dev
+```
+
+**Note:** Using ARNS name will use latest version of the sdk deployed
+
 ## Usage
 
 ```ts
