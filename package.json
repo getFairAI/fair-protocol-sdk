@@ -40,6 +40,7 @@
   },
   "scripts": {
     "prepare": "husky install",
+    "build": "rimraf ./dist && tsc",
     "lint:fix": "eslint --fix \"src/**/*.ts\"",
     "format:fix": "prettier --write \"src/**/*.ts\" --config ./.prettierrc",
     "lint": "eslint \"src/**/*.ts\"",
