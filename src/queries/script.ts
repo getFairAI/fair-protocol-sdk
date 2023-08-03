@@ -1,72 +1,30 @@
-import { DEFAULT_TAGS_RETRO, SCRIPT_CREATION_PAYMENT_TAGS, TAG_NAMES } from './constants';
-import { IContractEdge, IEdge, ITagFilter } from './interface';
-import { findByTags } from './queries';
+/*
+ * Copyright 2023 Fair protocol
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { FairScript } from '../classes/script';
+import { DEFAULT_TAGS_RETRO, SCRIPT_CREATION_PAYMENT_TAGS, TAG_NAMES } from '../utils/constants';
+import { ITagFilter, IContractEdge, IEdge, listFilterParams } from '../types/arweave';
 import {
+  logger,
   filterByUniqueScriptTxId,
   filterPreviousVersions,
   findTag,
   getTxOwner,
   isFakeDeleted,
-  logger,
-} from './utils';
-
-type listScriptsParam = string | IContractEdge | IEdge;
-
-/**
- * @description Class to wrap a Fair Protocol Script tx with easy to access proeprties
- * @property {string} owner - Owner of the script
- * @property {string} name - Name of the script
- * @property {string} txid - Transaction Id of the script
- * @property {IContractEdge | IEdge} raw - Raw transaction object
- * @property {string} paymentId - Payment Id of the script
- * @property {number} timestamp - Timestamp of the script
- */
-class FairScript {
-  private readonly _owner: string;
-  private readonly _name: string;
-  private readonly _txid: string;
-  private readonly _rawTx: IContractEdge | IEdge;
-  private readonly _paymentId: string;
-  private readonly _timestamp: number;
-
-  constructor(tx: IContractEdge | IEdge) {
-    const txid = findTag(tx, 'scriptTransaction');
-    if (!txid) {
-      throw new Error('Invalid script transaction');
-    }
-
-    this._owner = getTxOwner(tx);
-    this._name = findTag(tx, 'scriptName') ?? 'Name Not available';
-    this._txid = txid;
-    this._rawTx = tx;
-    this._paymentId = tx.node.id;
-    this._timestamp = parseInt(findTag(tx, 'unixTime') as string, 10);
-  }
-
-  public get owner() {
-    return this._owner;
-  }
-
-  public get name() {
-    return this._name;
-  }
-
-  public get txid() {
-    return this._txid;
-  }
-
-  public get raw() {
-    return this._rawTx;
-  }
-
-  public get paymentId() {
-    return this._paymentId;
-  }
-
-  public get timestamp() {
-    return this._timestamp;
-  }
-}
+} from '../utils/common';
+import { findByTags } from '../utils/queries';
 
 const commonTags: ITagFilter[] = [...DEFAULT_TAGS_RETRO, ...SCRIPT_CREATION_PAYMENT_TAGS];
 
@@ -93,7 +51,7 @@ const _queryScripts = async (tags: ITagFilter[]) => {
 
 const _filterScripts = async (txs: IContractEdge[]) => {
   const filtered: FairScript[] = [];
-  logger.debug('Filtering scripts');
+  logger.debug('Filtering scripts...');
   const uniqueScripts = filterByUniqueScriptTxId<IContractEdge[]>(txs);
   const filteredScritps = filterPreviousVersions<IContractEdge[]>(uniqueScripts as IContractEdge[]);
   for (const tx of filteredScritps) {
@@ -117,10 +75,7 @@ const _filterScripts = async (txs: IContractEdge[]) => {
 const _listAllScripts = async () => {
   const requestTxs = await _queryScripts(commonTags);
 
-  logger.debug('Filtering operators');
-  const filtered = await _filterScripts(requestTxs);
-
-  return filtered;
+  return _filterScripts(requestTxs);
 };
 
 const _listScriptsWithModelId = async (modelId: string) => {
@@ -132,10 +87,7 @@ const _listScriptsWithModelId = async (modelId: string) => {
 
   const requestTxs = await _queryScripts(tags);
 
-  logger.debug('Filtering operators');
-  const filtered = await _filterScripts(requestTxs);
-
-  return filtered;
+  return _filterScripts(requestTxs);
 };
 
 const _listScriptsWithModelTx = async (modelTx: IContractEdge | IEdge) => {
@@ -160,10 +112,7 @@ const _listScriptsWithModelTx = async (modelTx: IContractEdge | IEdge) => {
 
   const requestTxs = await _queryScripts(tags);
 
-  logger.debug('Filtering operators');
-  const filtered = await _filterScripts(requestTxs);
-
-  return filtered;
+  return _filterScripts(requestTxs);
 };
 
 /**
@@ -184,7 +133,7 @@ function listScripts(modelId?: string): Promise<FairScript[]>;
  */
 function listScripts(modelTx: IContractEdge | IEdge): Promise<FairScript[]>;
 
-function listScripts(param?: listScriptsParam) {
+function listScripts(param?: listFilterParams) {
   if (!param) {
     return _listAllScripts();
   } else if (param instanceof Object) {

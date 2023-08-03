@@ -13,3 +13,4 @@ tmp
 wallet-*.json
 wallet.json
 cache/
+*.tgz

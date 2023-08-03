@@ -2,10 +2,10 @@
  * Copyright 2023 Fair protocol
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * 
+ *
  * You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,14 +13,13 @@
  * limitations under the License.
  */
 
-import type { JestConfigWithTsJest } from 'ts-jest';
+import { JWKInterface } from 'warp-contracts';
+import Bundlr from '@bundlr-network/client/build/cjs/cjsIndex';
+import { NODE2_BUNDLR_URL } from './constants';
 
-const jestConfig: JestConfigWithTsJest = {
-  // [...]
-  // Replace `ts-jest` with the preset you want to use
-  // from the above list
-  preset: 'ts-jest',
-  testEnvironment: 'node',
+export const initBundlr = async (jwk: JWKInterface) => {
+  const bundlr = new Bundlr(NODE2_BUNDLR_URL, 'arweave', jwk);
+  await bundlr.ready();
+
+  return bundlr;
 };
-
-export default jestConfig;
