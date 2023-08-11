@@ -4,10 +4,20 @@
   "description": "",
   "type": "module",
   "files": [
-    "dist/*"
+    "web/*",
+    "node/*",
+    "common/*"
   ],
-  "main": "./dist/src/index.js",
-  "types": "./dist/src/index.d.ts",
+  "exports": {
+    "./node": {
+      "import": "./node/index.js",
+      "types": "./node/index.d.ts"
+    },
+    "./web": {
+      "import": "./web/index.js",
+      "types": "./web/index.d.ts"
+    }
+  },
   "dependencies": {
     "@bundlr-network/client": "^0.11.9",
     "arweave": "^1.14.0",
@@ -40,7 +50,9 @@
   },
   "scripts": {
     "prepare": "husky install",
-    "build": "rimraf ./dist && tsc",
+    "build": "rimraf ./dist && tsc && cp -r ./dist/src/* ./dist && rimraf ./dist/src",
+    "prepack": "cp -r dist/* .",
+    "postpack": "rimraf ./node ./web ./common",
     "lint:fix": "eslint --fix \"src/**/*.ts\"",
     "format:fix": "prettier --write \"src/**/*.ts\" --config ./.prettierrc",
     "lint": "eslint \"src/**/*.ts\"",
