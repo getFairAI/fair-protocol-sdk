@@ -60,7 +60,7 @@ const main = async () => {
   const tags = [
     { name: 'Content-Type', value: 'application/gzip' },
     { name: 'App-Name', value: 'Fair Protocol SDK' },
-    { name: 'App-Version', value: '1.0.0' },
+    { name: 'App-Version', value: '1.0.1' },
     { name: 'Title', value: 'Fair Protocol SDK' },
     { name: 'Description', value: 'Software Development kit for Fair Protocol funcitonality' },
     { name: 'Type', value: 'zip' },
