@@ -15,10 +15,18 @@ npm i https://fairprotocolsdk.arweave.dev
 ## Usage
 
 ```ts
-import FairSdk from 'fair-protocol-sdk';
+import FairSDK from 'fair-protocol-sdk';
+```
+
+Or Import For Browser
+
+```ts
+import FairSDKWeb from 'fair-protocol-sdk/web';
 ```
 
 ### Query API
+
+**NOTE:** All Queries methods have same usage for web and node
 
 * List Models
 
@@ -67,7 +75,7 @@ const allResponses = await FairSDK.queries.getAllResponses(nRequests);
 
 ### Inference
 
-* Execute Prompt
+* Execute Prompt For Node
 
 ```ts
 await FairSDK.setWallet('./wallet-user.json'); // load wallet into sdk
@@ -77,6 +85,23 @@ await FairSDK.use('script', '1Ra-E9rYvcShaFRqp38Lkf1SP1FFDtYggZILFpggtNE'); // u
 await FairSDK.use('operator', 'IGpjxRSgZoghaxZ-arElfMI2cRaXWPh34MGzOe8NTsE'); // use operator by txid
 
 await FairSDK.prompt('This is a test');
+```
+
+* Inference Usage for Browser
+
+```ts
+// need to initialize arweave and pass it's reference
+import Arweave from 'arweave';
+const arweave = Arweave.init();
+
+// init SDK with created arweave instance
+await FairSDKWeb.init(arweave); // load address
+
+await FairSDKWeb.use('model', 'uVDgZu7c78Ro2RuPS6-fqF75VoShO8CIKSMrVe9uAfw'); // use model by payment txid
+await FairSDKWeb.use('script', '1Ra-E9rYvcShaFRqp38Lkf1SP1FFDtYggZILFpggtNE'); // use script by payment txid
+await FairSDKWeb.use('operator', 'IGpjxRSgZoghaxZ-arElfMI2cRaXWPh34MGzOe8NTsE'); // use operator by txid
+
+await FairSDKWeb.prompt('This is a test');
 ```
 
 ### Utilities
@@ -94,7 +119,18 @@ await FairSDK.address; // returns loaded address
 
 await FairSDK.getArBalance(); // get ar balance for the current loaded wallet
 await FairSDK.getUBalance(); // get u balance for the current loaded wallet
+// **NOTE:** Set Wallet onlyu exists for node sdk
 await FairSDK.setWallet('./wallet-user.json'); // load wallet into sdk
+// or web
+
+FairSDK.setLogLevels(level);
+
+FairSDKWeb.model; // returns loaded model (after FairSDKWeb.use)
+FairSDKWeb.script; // returns loaded script (after FairSDKWeb.use)
+FairSDKWeb.operator; // returns loaded operator (after FairSDKWeb.use)
+await FairSDKWeb.address; // returns loaded address
+await FairSDKWeb.getArBalance(); // get ar balance for the current loaded wallet
+await FairSDKWeb.getUBalance(); // get u balance for the current loaded wallet
 ```
 
 ## Development
