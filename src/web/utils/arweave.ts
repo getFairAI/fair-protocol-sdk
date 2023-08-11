@@ -13,13 +13,19 @@
  * limitations under the License.
  */
 
-import { JWKInterface } from 'warp-contracts';
-import Bundlr from '@bundlr-network/client/build/cjs/cjsIndex';
-import { NODE2_BUNDLR_URL } from './constants';
+import type Arweave from 'arweave/web';
+import { ITag } from '../../common/types/arweave';
 
-export const initBundlr = async (jwk: JWKInterface) => {
-  const bundlr = new Bundlr(NODE2_BUNDLR_URL, 'arweave', jwk);
-  await bundlr.ready();
+export const getArBalance = async (arweave: Arweave, address: string) => {
+  const winstonBalance = await arweave.wallets.getBalance(address);
 
-  return bundlr;
+  return arweave.ar.winstonToAr(winstonBalance);
+};
+
+export const createTx = async (arweave: Arweave, data: string, tags: ITag[]) => {
+  const tx = await arweave.createTransaction({ data });
+
+  tags.forEach(({ name, value }) => tx.addTag(name, value));
+
+  return tx;
 };

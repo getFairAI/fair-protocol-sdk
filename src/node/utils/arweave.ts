@@ -15,7 +15,8 @@
 
 import Arweave from 'arweave';
 import { JWKInterface } from 'warp-contracts';
-import { NET_ARWEAVE_URL } from './constants';
+import { NET_ARWEAVE_URL } from '../../common/utils/constants';
+import { ITag } from '../../common/types/arweave';
 
 const arweave = Arweave.init({
   host: NET_ARWEAVE_URL.split('//')[1],
@@ -29,4 +30,12 @@ export const getArBalance = async (address: string) => {
   const winstonBalance = await arweave.wallets.getBalance(address);
 
   return arweave.ar.winstonToAr(winstonBalance);
+};
+
+export const createTx = async (data: string, tags: ITag[]) => {
+  const tx = await arweave.createTransaction({ data });
+
+  tags.forEach(({ name, value }) => tx.addTag(name, value));
+
+  return tx;
 };

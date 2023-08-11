@@ -16,26 +16,27 @@
 import fs from 'node:fs';
 import type NodeBundlr from '@bundlr-network/client/build/cjs/node/bundlr';
 import { JWKInterface } from 'warp-contracts';
-import { getResponses, getAllResponses, getRequests, inference } from './actions/inference';
-import { FairModel } from './classes/model';
-import { FairScript } from './classes/script';
-import { FairOperator } from './classes/operator';
-import { listModels } from './queries/model';
-import { listScripts } from './queries/script';
-import { listOperators } from './queries/operator';
-import { IEdge, IContractEdge, logLevels } from './types/arweave';
+import { inference } from './actions/inference';
 import {
   MODEL_CREATION_PAYMENT,
   SCRIPT_CREATION_PAYMENT,
   REGISTER_OPERATION,
   MAX_MESSAGE_SIZE,
   U_DIVIDER,
-} from './utils/constants';
+} from '../common/utils/constants';
 import { jwkToAddress, getArBalance } from './utils/arweave';
 import { initBundlr } from './utils/bundlr';
-import { findTag, logger } from './utils/common';
-import { getById } from './utils/queries';
-import { connectToU, getUBalance } from './utils/warp';
+import { findTag, logger } from '../common/utils/common';
+import { getById } from '../common/utils/queries';
+import { connectToU, getUBalance } from '../common/utils/warp';
+import { FairModel } from '../common/classes/model';
+import { FairOperator } from '../common/classes/operator';
+import { FairScript } from '../common/classes/script';
+import { listModels } from '../common/queries/model';
+import { listOperators } from '../common/queries/operator';
+import { listScripts } from '../common/queries/script';
+import { IEdge, IContractEdge, logLevels } from '../common/types/arweave';
+import { getAllResponses, getRequests, getResponses } from '../common/queries/inference';
 
 const walletError = 'Wallet not set';
 

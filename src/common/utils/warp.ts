@@ -28,8 +28,8 @@ const contract = warp.contract(U_CONTRACT_ID).setEvaluationOptions({
 });
 
 // warp u funcitonality
-export const connectToU = (jwk: JWKInterface) => {
-  contract.connect(jwk);
+export const connectToU = (wallet: JWKInterface | 'use_wallet') => {
+  contract.connect(wallet);
 };
 
 export const getUBalance = async (address: string) => {
