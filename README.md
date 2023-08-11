@@ -5,7 +5,7 @@
 Install with npm from link or ARNS name
 
 ```sh
-npm i https://arweave.net/DeqiMGaUsc_i1MT5QX6ccA5CDYLTc1lcUxKhHsHOquA 
+npm i https://arweave.net/8q_uDLWfXIMEWSuq-eQLQFqTGDiJPOl3hIwkwXqZIQI 
 # OR
 npm i https://fairprotocolsdk.arweave.dev
 ```
