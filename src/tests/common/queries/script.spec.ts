@@ -14,19 +14,21 @@
  */
 
 import { describe, expect, test, jest } from '@jest/globals';
-import { TAG_NAMES } from '../utils/constants';
-import { listModels } from '../queries/model';
-import { findByTags } from '../utils/queries';
+import { TAG_NAMES } from '../../../common/utils/constants';
+import { findByTags } from '../../../common/utils/queries';
+import { listScripts } from '../../../common/queries/script';
 
-const models = [
+const scripts = [
   {
     node: {
       id: '1',
       tags: [
         { name: TAG_NAMES.modelName, value: 'model1' },
+        { name: TAG_NAMES.modelCreator, value: 'creator1' },
         { name: TAG_NAMES.unixTime, value: '1' },
         { name: TAG_NAMES.modelTransaction, value: 'modelId1' },
         { name: TAG_NAMES.sequencerOwner, value: 'owner1' },
+        { name: TAG_NAMES.scriptTransaction, value: 'scriptId1' },
       ],
     },
   },
@@ -35,9 +37,11 @@ const models = [
       id: '2',
       tags: [
         { name: TAG_NAMES.modelName, value: 'model2' },
+        { name: TAG_NAMES.modelCreator, value: 'creator2' },
         { name: TAG_NAMES.unixTime, value: '2' },
         { name: TAG_NAMES.modelTransaction, value: 'modelId2' },
         { name: TAG_NAMES.sequencerOwner, value: 'owner2' },
+        { name: TAG_NAMES.scriptTransaction, value: 'scriptId2' },
       ],
     },
   },
@@ -48,7 +52,7 @@ jest.mock('../queries', () => {
     findByTags: jest.fn().mockImplementation(() => {
       return {
         transactions: {
-          edges: models,
+          edges: scripts,
           pageInfo: {
             hasNextPage: false,
           },
@@ -68,10 +72,10 @@ jest.mock('../queries', () => {
   };
 });
 
-describe('Models', () => {
-  test('list models', async () => {
-    const result = await listModels();
+describe('Scripts', () => {
+  test('list all scripts', async () => {
+    const result = await listScripts();
 
-    expect(result.length).toBe(models.length);
+    expect(result.length).toBe(scripts.length);
   });
 });

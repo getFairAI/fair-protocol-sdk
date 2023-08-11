@@ -13,40 +13,37 @@
  * limitations under the License.
  */
 
-import fs from 'node:fs';
-import type NodeBundlr from '@bundlr-network/client/build/cjs/node/bundlr';
 import { JWKInterface } from 'warp-contracts';
-import { getResponses, getAllResponses, getRequests, inference } from './actions/inference';
-import { FairModel } from './classes/model';
-import { FairScript } from './classes/script';
-import { FairOperator } from './classes/operator';
-import { listModels } from './queries/model';
-import { listScripts } from './queries/script';
-import { listOperators } from './queries/operator';
-import { IEdge, IContractEdge, logLevels } from './types/arweave';
+import { inference } from './actions/inference';
 import {
   MODEL_CREATION_PAYMENT,
   SCRIPT_CREATION_PAYMENT,
   REGISTER_OPERATION,
   MAX_MESSAGE_SIZE,
   U_DIVIDER,
-} from './utils/constants';
-import { jwkToAddress, getArBalance } from './utils/arweave';
-import { initBundlr } from './utils/bundlr';
-import { findTag, logger } from './utils/common';
-import { getById } from './utils/queries';
-import { connectToU, getUBalance } from './utils/warp';
+} from '../common/utils/constants';
+import { jwkToAddress, getArBalance } from '../common/utils/arweave';
+import { findTag, logger } from '../common/utils/common';
+import { getById } from '../common/utils/queries';
+import { connectToU, getUBalance } from '../common/utils/warp';
+import { FairModel } from '../common/classes/model';
+import { FairOperator } from '../common/classes/operator';
+import { FairScript } from '../common/classes/script';
+import { listModels } from '../common/queries/model';
+import { listOperators } from '../common/queries/operator';
+import { listScripts } from '../common/queries/script';
+import { IEdge, IContractEdge, logLevels } from '../common/types/arweave';
+import { getAllResponses, getRequests, getResponses } from '../common/queries/inference';
 
-const walletError = 'Wallet not set';
+const walletError = 'Wallet not connected';
 
-export default abstract class FairSDK {
+export default abstract class FairSDKWeb {
   // no constructor, only static methods
   private static _model: FairModel;
   private static _script: FairScript;
   private static _operator: FairOperator;
   private static _wallet: JWKInterface;
   private static _address: string;
-  private static _bundlr: NodeBundlr;
 
   public static get model() {
     return this._model;
@@ -61,17 +58,10 @@ export default abstract class FairSDK {
   }
 
   public static get address() {
-    if (!this._wallet) {
+    if (!this._address) {
       throw new Error(walletError);
     } else {
-      return (async () => {
-        if (!this._address) {
-          this._address = await jwkToAddress(this._wallet);
-        } else {
-          // ignore
-        }
-        return this._address;
-      })();
+      return this._address;
     }
   }
 
@@ -80,9 +70,27 @@ export default abstract class FairSDK {
       listModels,
       listScripts,
       listOperators,
-      getResponses: (requestIds: string[]) => getResponses(this._address, requestIds),
-      getAllResponses: (limit: number) => getAllResponses(this._address, limit),
-      getRequests: (limit: number) => getRequests(this._address, limit),
+      getResponses: async (requestIds: string[]) => {
+        if (!this._address) {
+          throw new Error(walletError);
+        } else {
+          return getResponses(this._address, requestIds);
+        }
+      },
+      getAllResponses: (limit: number) => {
+        if (!this._address) {
+          throw new Error(walletError);
+        } else {
+          return getAllResponses(this._address, limit);
+        }
+      },
+      getRequests: (limit: number) => {
+        if (!this._address) {
+          throw new Error(walletError);
+        } else {
+          return getRequests(this._address, limit);
+        }
+      },
     };
   }
 
@@ -148,20 +156,20 @@ export default abstract class FairSDK {
     logger.level = level;
   };
 
-  public static setWallet = async (wallet: string | JWKInterface) => {
-    if (wallet instanceof Object) {
-      this._wallet = wallet;
-    } else if (typeof wallet === 'string') {
-      // wallet is path try to read from file
-      const JWK: JWKInterface = JSON.parse(fs.readFileSync(wallet).toString());
-      this._wallet = JWK;
+  public static connectWallet = async () => {
+    if (!window?.arweaveWallet) {
+      throw new Error("Could not detect to 'ArConnect' Arweave Wallet. Please install ArConnect");
     } else {
-      throw new Error('Invalid wallet; Please provide a path to a wallet file or a JWK object');
+      await window.arweaveWallet.connect([
+        'ACCESS_ADDRESS',
+        'SIGN_TRANSACTION',
+        'DISPATCH',
+        'ACCESS_PUBLIC_KEY',
+        'SIGNATURE',
+      ]);
+      this._address = await window.arweaveWallet.getActiveAddress();
+      connectToU('use_wallet');
     }
-
-    this._address = ''; // reset address
-    connectToU(this._wallet);
-    this._bundlr = await initBundlr(this._wallet);
   };
 
   public static getArBalance = async () => {
@@ -178,25 +186,16 @@ export default abstract class FairSDK {
   };
 
   public static getUBalance = async () => {
-    if (!this._wallet) {
+    if (!this._address) {
       throw new Error(walletError);
-    } else if (!this._address) {
-      // user has not called address yet
-      this._address = await jwkToAddress(this._wallet);
     } else {
-      // ignore
+      return getUBalance(this._address);
     }
-
-    return getUBalance(this._address);
   };
 
   public static prompt = async (content: string) => {
     if (!this._address || !this._wallet) {
       throw new Error(walletError);
-    }
-
-    if (!this._bundlr) {
-      throw new Error('Bundlr not initialized');
     }
 
     if (this._model && this._script && this._operator) {
@@ -217,7 +216,6 @@ export default abstract class FairSDK {
         this._operator,
         content,
         this._address,
-        this._bundlr,
       );
       logger.info(`Inference result: ${JSON.stringify(result)}`);
     }

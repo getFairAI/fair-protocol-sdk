@@ -15,10 +15,10 @@
 
 import { JWKInterface } from 'warp-contracts';
 import Bundlr from '@bundlr-network/client/build/cjs/cjsIndex';
-import { NODE2_BUNDLR_URL } from './constants';
+import { NODE2_BUNDLR_URL } from '../../common/utils/constants';
 
-export const initBundlr = async (jwk: JWKInterface) => {
-  const bundlr = new Bundlr(NODE2_BUNDLR_URL, 'arweave', jwk);
+export const initBundlr = async (jwk?: JWKInterface) => {
+  const bundlr = new Bundlr(NODE2_BUNDLR_URL, 'arweave', jwk || window.arweaveWallet);
   await bundlr.ready();
 
   return bundlr;
