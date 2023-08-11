@@ -24,7 +24,7 @@ import {
   MAX_MESSAGE_SIZE,
   U_DIVIDER,
 } from '../common/utils/constants';
-import { jwkToAddress, getArBalance } from '../common/utils/arweave';
+import { jwkToAddress, getArBalance } from './utils/arweave';
 import { initBundlr } from './utils/bundlr';
 import { findTag, logger } from '../common/utils/common';
 import { getById } from '../common/utils/queries';

@@ -19,7 +19,7 @@ import { FairOperator } from '../../common/classes/operator';
 import { FairScript } from '../../common/classes/script';
 import { getLastConversationId } from '../../common/queries/inference';
 import { getUploadTags, handlePayment } from '../../common/utils/inference';
-import { createTx } from '../../common/utils/arweave';
+import { createTx } from '../utils/arweave';
 
 const inference = async (
   model: FairModel,

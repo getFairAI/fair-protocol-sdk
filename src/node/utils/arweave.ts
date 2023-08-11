@@ -15,8 +15,8 @@
 
 import Arweave from 'arweave';
 import { JWKInterface } from 'warp-contracts';
-import { NET_ARWEAVE_URL } from './constants';
-import { ITag } from '../types/arweave';
+import { NET_ARWEAVE_URL } from '../../common/utils/constants';
+import { ITag } from '../../common/types/arweave';
 
 const arweave = Arweave.init({
   host: NET_ARWEAVE_URL.split('//')[1],
