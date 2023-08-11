@@ -7,7 +7,7 @@ Install with npm from link or ARNS name
 ```sh
 npm i https://arweave.net/8q_uDLWfXIMEWSuq-eQLQFqTGDiJPOl3hIwkwXqZIQI 
 # OR
-npm i https://fairprotocolsdk.arweave.dev
+npm i https://fairprotocolsdk.arweave.dev # currently not working
 ```
 
 **Note:** Using ARNS name will use latest version of the sdk deployed
@@ -15,7 +15,7 @@ npm i https://fairprotocolsdk.arweave.dev
 ## Usage
 
 ```ts
-import FairSDK from 'fair-protocol-sdk';
+import FairSDK from 'fair-protocol-sdk/node';
 ```
 
 Or Import For Browser
