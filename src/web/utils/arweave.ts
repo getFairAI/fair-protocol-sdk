@@ -13,26 +13,16 @@
  * limitations under the License.
  */
 
-import Arweave from 'arweave/web';
-import { JWKInterface } from 'warp-contracts';
-import { NET_ARWEAVE_URL } from '../../common/utils/constants';
+import type Arweave from 'arweave/web';
 import { ITag } from '../../common/types/arweave';
 
-const arweave = Arweave.init({
-  host: NET_ARWEAVE_URL.split('//')[1],
-  port: 443,
-  protocol: 'https',
-});
-
-export const jwkToAddress = async (jwk: JWKInterface) => arweave.wallets.jwkToAddress(jwk);
-
-export const getArBalance = async (address: string) => {
+export const getArBalance = async (arweave: Arweave, address: string) => {
   const winstonBalance = await arweave.wallets.getBalance(address);
 
   return arweave.ar.winstonToAr(winstonBalance);
 };
 
-export const createTx = async (data: string, tags: ITag[]) => {
+export const createTx = async (arweave: Arweave, data: string, tags: ITag[]) => {
   const tx = await arweave.createTransaction({ data });
 
   tags.forEach(({ name, value }) => tx.addTag(name, value));

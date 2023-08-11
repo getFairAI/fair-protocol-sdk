@@ -20,8 +20,10 @@ import { FairScript } from '../../common/classes/script';
 import { getLastConversationId } from '../../common/queries/inference';
 import { getUploadTags, handlePayment } from '../../common/utils/inference';
 import { createTx } from '../utils/arweave';
+import type Arweave from 'arweave/web';
 
 const inference = async (
+  arweave: Arweave,
   model: FairModel,
   script: FairScript,
   operator: FairOperator,
@@ -32,7 +34,7 @@ const inference = async (
   const tags = getUploadTags(script, operator.owner, conversationId);
 
   try {
-    const tx = await createTx(prompt, tags);
+    const tx = await createTx(arweave, prompt, tags);
     const result = await window.arweaveWallet.dispatch(tx);
     if (!result.id) {
       throw new Error('No txid returned from dispatch');

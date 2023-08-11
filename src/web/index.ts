@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-import { JWKInterface } from 'warp-contracts';
 import { inference } from './actions/inference';
 import {
   MODEL_CREATION_PAYMENT,
@@ -22,7 +21,8 @@ import {
   MAX_MESSAGE_SIZE,
   U_DIVIDER,
 } from '../common/utils/constants';
-import { jwkToAddress, getArBalance } from './utils/arweave';
+import { getArBalance } from './utils/arweave';
+import type Arweave from 'arweave/web';
 import { findTag, logger } from '../common/utils/common';
 import { getById } from '../common/utils/queries';
 import { connectToU, getUBalance } from '../common/utils/warp';
@@ -42,8 +42,8 @@ export default abstract class FairSDKWeb {
   private static _model: FairModel;
   private static _script: FairScript;
   private static _operator: FairOperator;
-  private static _wallet: JWKInterface;
   private static _address: string;
+  private static _arweave: Arweave;
 
   public static get model() {
     return this._model;
@@ -173,16 +173,14 @@ export default abstract class FairSDKWeb {
   };
 
   public static getArBalance = async () => {
-    if (!this._wallet) {
-      throw new Error(walletError);
+    if (!this._arweave) {
+      throw new Error("Arweave not initialized. Please run 'FairSDK.init()' first.");
     } else if (!this._address) {
       // user has not called address yet
-      this._address = await jwkToAddress(this._wallet);
+      throw new Error(walletError);
     } else {
-      // ignore
+      return getArBalance(this._arweave, this._address);
     }
-
-    return getArBalance(this._address);
   };
 
   public static getUBalance = async () => {
@@ -194,7 +192,11 @@ export default abstract class FairSDKWeb {
   };
 
   public static prompt = async (content: string) => {
-    if (!this._address || !this._wallet) {
+    if (!this._arweave) {
+      throw new Error("Arweave not initialized. Please run 'FairSDK.init()' first.");
+    }
+
+    if (!this._address) {
       throw new Error(walletError);
     }
 
@@ -211,6 +213,7 @@ export default abstract class FairSDKWeb {
         throw new Error(`Insufficient U balance, needed ${parsedOperatorFee} U`);
       }
       const result = await inference(
+        this._arweave,
         this._model,
         this._script,
         this._operator,
@@ -219,5 +222,9 @@ export default abstract class FairSDKWeb {
       );
       logger.info(`Inference result: ${JSON.stringify(result)}`);
     }
+  };
+
+  public static init = (arweave: unknown) => {
+    this._arweave = arweave as Arweave;
   };
 }
