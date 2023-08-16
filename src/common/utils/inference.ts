@@ -57,6 +57,7 @@ export const handlePayment = async (
     { name: TAG_NAMES.inferenceTransaction, value: bundlrId },
     { name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() },
     { name: TAG_NAMES.contentType, value: contentType },
+    { name: TAG_NAMES.txOrigin, value: 'Fair Protocol SDK' },
   ];
 
   const operatorFeeShare = parsedUFee * OPERATOR_PERCENTAGE_FEE;
@@ -112,6 +113,7 @@ export const getUploadTags = (script: FairScript, operatorAddr: string, conversa
   const tempDate = Date.now() / secondInMS;
   tags.push({ name: TAG_NAMES.unixTime, value: tempDate.toString() });
   tags.push({ name: TAG_NAMES.contentType, value: 'text/plain' });
+  tags.push({ name: TAG_NAMES.txOrigin, value: 'Fair Protocol SDK' });
 
   return tags;
 };
