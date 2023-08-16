@@ -80,6 +80,7 @@ export const TAG_NAMES = {
   sequencerOwner: 'Sequencer-Owner',
   updateFor: 'Update-For',
   previousVersions: 'Previous-Versions',
+  txOrigin: 'Transaction-Origin',
 };
 
 // Operation Names
