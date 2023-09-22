@@ -19,8 +19,6 @@ import { ITag } from '../types/arweave';
 import { logger } from './common';
 import {
   TAG_NAMES,
-  APP_NAME,
-  APP_VERSION,
   INFERENCE_PAYMENT,
   secondInMS,
   OPERATOR_PERCENTAGE_FEE,
@@ -29,6 +27,8 @@ import {
   CURATOR_PERCENTAGE_FEE,
   VAULT_ADDRESS,
   SCRIPT_INFERENCE_REQUEST,
+  PROTOCOL_NAME,
+  PROTOCOL_VERSION,
 } from './constants';
 import { sendU } from './warp';
 
@@ -45,8 +45,8 @@ export const handlePayment = async (
 ) => {
   const parsedUFee = parseFloat(inferenceFee);
   const paymentTags = [
-    { name: TAG_NAMES.appName, value: APP_NAME },
-    { name: TAG_NAMES.appVersion, value: APP_VERSION },
+    { name: TAG_NAMES.protocolName, value: PROTOCOL_NAME },
+    { name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION },
     { name: TAG_NAMES.operationName, value: INFERENCE_PAYMENT },
     { name: TAG_NAMES.scriptName, value: script.name },
     { name: TAG_NAMES.scriptCurator, value: script.owner },
@@ -102,8 +102,8 @@ export const handlePayment = async (
 
 export const getUploadTags = (script: FairScript, operatorAddr: string, conversationId: number) => {
   const tags: ITag[] = [];
-  tags.push({ name: TAG_NAMES.appName, value: APP_NAME });
-  tags.push({ name: TAG_NAMES.appVersion, value: APP_VERSION });
+  tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
+  tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
   tags.push({ name: TAG_NAMES.scriptName, value: script.name });
   tags.push({ name: TAG_NAMES.scriptCurator, value: script.owner });
   tags.push({ name: TAG_NAMES.scriptTransaction, value: script.txid });

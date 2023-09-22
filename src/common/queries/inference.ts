@@ -19,11 +19,11 @@ import {
   DEFAULT_TAGS_FOR_TOKENS,
   TAG_NAMES,
   SCRIPT_INFERENCE_RESPONSE,
-  APP_NAME,
-  APP_VERSION,
   SCRIPT_INFERENCE_REQUEST,
   DEFAULT_TAGS,
   CONVERSATION_START,
+  PROTOCOL_NAME,
+  PROTOCOL_VERSION,
 } from '../utils/constants';
 import {
   getTxOwners,
@@ -99,8 +99,8 @@ export const getAllResponses = async (userAddr: string, limit = DEFAULT_LIMIT) =
 
 export const getRequests = async (userAddr: string, limit = DEFAULT_LIMIT) => {
   const tags = [
-    { name: TAG_NAMES.appName, values: [APP_NAME] },
-    { name: TAG_NAMES.appVersion, values: [APP_VERSION] },
+    { name: TAG_NAMES.protocolName, values: [PROTOCOL_NAME] },
+    { name: TAG_NAMES.protocolVersion, values: [PROTOCOL_VERSION] },
     { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_REQUEST] },
   ];
 

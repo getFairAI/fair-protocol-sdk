@@ -16,6 +16,7 @@
 import { GraphQLClient, gql } from 'graphql-request';
 import { NET_ARWEAVE_URL } from './constants';
 import { IContractQueryResult, IEdge, IQueryResult, ITagFilter } from '../types/arweave';
+import { findTag } from './common';
 
 const client = new GraphQLClient(`${NET_ARWEAVE_URL}/graphql`);
 
@@ -46,30 +47,6 @@ const FIND_BY_TAGS = gql`
 const QUERY_TX_WITH_OWNERS = gql`
   query QUERY_TX_WITH_OWNERS($owners: [String!], $tags: [TagFilter!]) {
     transactions(owners: $owners, tags: $tags, sort: HEIGHT_DESC, first: 1) {
-      pageInfo {
-        hasNextPage
-      }
-      edges {
-        cursor
-        node {
-          id
-          owner {
-            address
-            key
-          }
-          tags {
-            name
-            value
-          }
-        }
-      }
-    }
-  }
-`;
-
-const QUERY_TXS_WITH_OWNERS = gql`
-  query QUERY_TXS_WITH_OWNERS($owners: [String!], $tags: [TagFilter!], $first: Int!) {
-    transactions(owners: $owners, tags: $tags, sort: HEIGHT_DESC, first: $first) {
       pageInfo {
         hasNextPage
       }
@@ -200,11 +177,37 @@ export const getTxOwners = async (txids: string[]) => {
 };
 
 export const getTxsWithOwners = async (tags: ITagFilter[], owners: string[], first: number) => {
-  const data: IQueryResult = await client.request(QUERY_TXS_WITH_OWNERS, {
-    tags,
-    owners,
-    first,
-  });
+  const txs: IEdge[] = [];
+  let hasNextPage = false;
+  let lastPaginationCursor = null;
 
-  return data.transactions.edges;
+  if (first <= 0) {
+    // if first is 0 or negative, fetch everything
+    first = Math.min();
+  } else {
+    // ignore
+  }
+
+  do {
+    const data: IQueryResult = await client.request(FIND_BY_TAGS, {
+      tags,
+      first,
+      after: lastPaginationCursor,
+    });
+
+    for (const tx of data.transactions.edges) {
+      const owner = findTag(tx, 'sequencerOwner') || tx.node.owner.address;
+
+      if (owners.includes(owner)) {
+        txs.push(tx);
+      } else {
+        // ignore
+      }
+    }
+
+    hasNextPage = data.transactions.pageInfo.hasNextPage;
+    lastPaginationCursor = data.transactions.edges[data.transactions.edges.length - 1].cursor;
+  } while (txs.length < Math.max() && hasNextPage);
+
+  return txs;
 };

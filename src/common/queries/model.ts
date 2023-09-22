@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { DEFAULT_TAGS_RETRO, MODEL_CREATION_PAYMENT_TAGS } from '../utils/constants';
+import { DEFAULT_TAGS, MODEL_CREATION_PAYMENT_TAGS } from '../utils/constants';
 import { IContractEdge } from '../types/arweave';
 import { FairModel } from '../classes/model';
 import { findTag, isFakeDeleted } from '../utils/common';
@@ -23,7 +23,7 @@ const listModels = async () => {
   let hasNextPage = false;
   let requestTxs: IContractEdge[] = [];
   do {
-    const tags = [...DEFAULT_TAGS_RETRO, ...MODEL_CREATION_PAYMENT_TAGS];
+    const tags = [...DEFAULT_TAGS, ...MODEL_CREATION_PAYMENT_TAGS];
     const first = 10;
     const after = hasNextPage ? requestTxs[requestTxs.length - 1].cursor : undefined;
 

@@ -14,7 +14,7 @@
  */
 
 import { FairScript } from '../classes/script';
-import { DEFAULT_TAGS_RETRO, SCRIPT_CREATION_PAYMENT_TAGS, TAG_NAMES } from '../utils/constants';
+import { DEFAULT_TAGS, SCRIPT_CREATION_PAYMENT_TAGS, TAG_NAMES } from '../utils/constants';
 import { ITagFilter, IContractEdge, IEdge, listFilterParams } from '../types/arweave';
 import {
   logger,
@@ -26,7 +26,7 @@ import {
 } from '../utils/common';
 import { findByTags } from '../utils/queries';
 
-const commonTags: ITagFilter[] = [...DEFAULT_TAGS_RETRO, ...SCRIPT_CREATION_PAYMENT_TAGS];
+const commonTags: ITagFilter[] = [...DEFAULT_TAGS, ...SCRIPT_CREATION_PAYMENT_TAGS];
 
 const _queryScripts = async (tags: ITagFilter[]) => {
   let hasNextPage = false;
@@ -55,9 +55,13 @@ const _filterScripts = async (txs: IContractEdge[]) => {
   const uniqueScripts = filterByUniqueScriptTxId<IContractEdge[]>(txs);
   const filteredScritps = filterPreviousVersions<IContractEdge[]>(uniqueScripts as IContractEdge[]);
   for (const tx of filteredScritps) {
-    const modelTx = findTag(tx, 'scriptTransaction') as string;
-    const modelOwner = getTxOwner(tx);
-    if (await isFakeDeleted(modelTx, modelOwner, 'script')) {
+    const scriptTx = findTag(tx, 'scriptTransaction') as string;
+    const scriptOwner = getTxOwner(tx);
+
+    if (!scriptTx || !scriptOwner) {
+      logger.debug(`Invalid script: ${tx.node.id}`);
+      // ignore
+    } else if (await isFakeDeleted(scriptTx, scriptOwner, 'script')) {
       // ignore tx
     } else {
       filtered.push(new FairScript(tx));
@@ -80,7 +84,7 @@ const _listAllScripts = async () => {
 
 const _listScriptsWithModelId = async (modelId: string) => {
   const tags = [
-    ...DEFAULT_TAGS_RETRO,
+    ...DEFAULT_TAGS,
     ...(modelId ? [{ name: TAG_NAMES.modelTransaction, values: [modelId] }] : []),
     ...SCRIPT_CREATION_PAYMENT_TAGS,
   ];
