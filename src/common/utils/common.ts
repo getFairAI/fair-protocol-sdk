@@ -35,6 +35,8 @@ export const logger = Pino({
   level: 'info',
 });
 
+const inputFnName = 'transfer';
+
 const getOperatorRequests = async (
   address: string,
   operatorFee: string,
@@ -43,28 +45,45 @@ const getOperatorRequests = async (
 ) => {
   const qty = parseFloat(operatorFee);
   const requestPaymentsInputNumber = JSON.stringify({
-    function: 'transfer',
+    function: inputFnName,
     target: address,
     qty,
   });
   const requestPaymentsInputStr = JSON.stringify({
-    function: 'transfer',
+    function: inputFnName,
     target: address,
     qty: qty.toString(),
   });
-  const tags = [
-    ...DEFAULT_TAGS,
-    { name: TAG_NAMES.contract, values: [U_CONTRACT_ID] },
-    { name: TAG_NAMES.input, values: [requestPaymentsInputNumber, requestPaymentsInputStr] },
-    { name: TAG_NAMES.operationName, values: [INFERENCE_PAYMENT] },
-    { name: TAG_NAMES.scriptName, values: [scriptName] },
-    { name: TAG_NAMES.scriptCurator, values: [scriptCurator] },
-  ];
-  const first = N_PREVIOUS_BLOCKS;
+  const data = await findByTags(
+    [
+      ...DEFAULT_TAGS,
+      { name: TAG_NAMES.contract, values: [U_CONTRACT_ID] },
+      { name: TAG_NAMES.operationName, values: [INFERENCE_PAYMENT] },
+      { name: TAG_NAMES.scriptName, values: [scriptName] },
+      { name: TAG_NAMES.scriptCurator, values: [scriptCurator] },
+    ],
+    N_PREVIOUS_BLOCKS,
+  );
 
-  const data = await findByTags(tags, first);
+  return data.transactions.edges.filter((el: IContractEdge) => {
+    try {
+      const inputTag = findTag(el, 'input');
+      if (!inputTag) {
+        return false;
+      } else if (inputTag === requestPaymentsInputNumber || inputTag === requestPaymentsInputStr) {
+        return true;
+      } else {
+        const inputObj: { qty: number | string; function: string; target: string } =
+          JSON.parse(inputTag);
+        const qtyNumber =
+          typeof inputObj.qty === 'string' ? parseFloat(inputObj.qty) : inputObj.qty;
 
-  return data.transactions.edges;
+        return qtyNumber >= qty && inputObj.function === inputFnName && inputObj.target === address;
+      }
+    } catch (err) {
+      return false;
+    }
+  });
 };
 
 const hasOperatorAnswered = async (request: IEdge | IContractEdge, opAddress: string) => {
