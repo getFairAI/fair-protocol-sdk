@@ -13,20 +13,8 @@
  * limitations under the License.
  */
 
-import {
-  CANCEL_OPERATION,
-  DEFAULT_TAGS,
-  INFERENCE_PAYMENT,
-  MARKETPLACE_ADDRESS,
-  MODEL_DELETION,
-  N_PREVIOUS_BLOCKS,
-  SCRIPT_DELETION,
-  SCRIPT_INFERENCE_RESPONSE,
-  TAG_NAMES,
-  U_CONTRACT_ID,
-} from './constants';
-import { IContractEdge, IEdge, ITagFilter } from '../types/arweave';
-import { findByTags, getTxWithOwners } from './queries';
+import { TAG_NAMES } from './constants';
+import { IContractEdge, IEdge } from '../types/arweave';
 import { default as Pino } from 'pino';
 import redstone from 'redstone-api';
 
@@ -34,130 +22,6 @@ export const logger = Pino({
   name: 'Fair-SDK',
   level: 'info',
 });
-
-const inputFnName = 'transfer';
-
-const getOperatorRequests = async (
-  address: string,
-  operatorFee: string,
-  scriptName: string,
-  scriptCurator: string,
-) => {
-  const qty = parseFloat(operatorFee);
-  const requestPaymentsInputNumber = JSON.stringify({
-    function: inputFnName,
-    target: address,
-    qty,
-  });
-  const requestPaymentsInputStr = JSON.stringify({
-    function: inputFnName,
-    target: address,
-    qty: qty.toString(),
-  });
-  const data = await findByTags(
-    [
-      ...DEFAULT_TAGS,
-      { name: TAG_NAMES.contract, values: [U_CONTRACT_ID] },
-      { name: TAG_NAMES.operationName, values: [INFERENCE_PAYMENT] },
-      { name: TAG_NAMES.scriptName, values: [scriptName] },
-      { name: TAG_NAMES.scriptCurator, values: [scriptCurator] },
-    ],
-    N_PREVIOUS_BLOCKS,
-  );
-
-  return data.transactions.edges.filter((el: IContractEdge) => {
-    try {
-      const inputTag = findTag(el, 'input');
-      if (!inputTag) {
-        return false;
-      } else if (inputTag === requestPaymentsInputNumber || inputTag === requestPaymentsInputStr) {
-        return true;
-      } else {
-        const inputObj: { qty: number | string; function: string; target: string } =
-          JSON.parse(inputTag);
-        const qtyNumber =
-          typeof inputObj.qty === 'string' ? parseFloat(inputObj.qty) : inputObj.qty;
-
-        return qtyNumber >= qty && inputObj.function === inputFnName && inputObj.target === address;
-      }
-    } catch (err) {
-      return false;
-    }
-  });
-};
-
-const hasOperatorAnswered = async (request: IEdge | IContractEdge, opAddress: string) => {
-  const responseTags: ITagFilter[] = [
-    ...DEFAULT_TAGS,
-    {
-      name: TAG_NAMES.requestTransaction,
-      values: [findTag(request, 'inferenceTransaction') as string],
-    },
-    { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_RESPONSE] },
-  ];
-
-  const data: IEdge[] = await getTxWithOwners(responseTags, [opAddress]);
-
-  if (data.length === 0) {
-    return false;
-  } else {
-    return true;
-  }
-};
-
-const isCancelled = async (txid: string, opAddress: string) => {
-  const cancelTags = [
-    ...DEFAULT_TAGS,
-    { name: TAG_NAMES.operationName, values: [CANCEL_OPERATION] },
-    { name: TAG_NAMES.registrationTransaction, values: [txid] },
-  ];
-
-  const data: IEdge[] = await getTxWithOwners(cancelTags, [opAddress]);
-
-  return data.length > 0;
-};
-
-export const isValidRegistration = async (
-  txid: string,
-  operatorFee: string,
-  opAddress: string,
-  scriptName: string,
-  scriptCurator: string,
-) => {
-  const isCancelledTx = await isCancelled(txid, opAddress);
-  if (isCancelledTx) {
-    return false;
-  }
-
-  const lastRequests = await getOperatorRequests(opAddress, operatorFee, scriptName, scriptCurator);
-  for (const request of lastRequests) {
-    // check if operator has answered last 7 requests
-    if (!(await hasOperatorAnswered(request, opAddress))) {
-      // if any of the last 7 requests has not been answered, the operator is not valid
-      return false;
-    }
-  }
-
-  return true;
-};
-
-export const isFakeDeleted = async (txid: string, owner: string, type: 'script' | 'model') => {
-  const deleteTags: ITagFilter[] = [];
-
-  if (type === 'model') {
-    deleteTags.push({ name: TAG_NAMES.operationName, values: [MODEL_DELETION] });
-    deleteTags.push({ name: TAG_NAMES.modelTransaction, values: [txid] });
-  } else {
-    deleteTags.push({ name: TAG_NAMES.operationName, values: [SCRIPT_DELETION] });
-    deleteTags.push({ name: TAG_NAMES.scriptTransaction, values: [txid] });
-  }
-
-  const owners = owner ? [MARKETPLACE_ADDRESS, owner] : [MARKETPLACE_ADDRESS];
-
-  const data = await getTxWithOwners(deleteTags, owners);
-
-  return data.length > 0;
-};
 
 type tagName = keyof typeof TAG_NAMES;
 export const findTag = (tx: IEdge | IContractEdge, tagName: tagName) =>
