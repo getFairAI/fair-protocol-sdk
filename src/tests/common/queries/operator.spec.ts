@@ -51,7 +51,7 @@ const operators = [
   },
 ];
 
-jest.mock('../queries', () => {
+jest.mock('../../../common/utils/queries', () => {
   return {
     findByTags: jest.fn().mockImplementation(() => {
       return {
