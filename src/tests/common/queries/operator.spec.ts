@@ -16,7 +16,7 @@
 import { describe, expect, test, jest } from '@jest/globals';
 import { TAG_NAMES } from '../../../common/utils/constants';
 import { listOperators } from '../../../common/queries/operator';
-import { findByTags } from '../../../common/utils/queries';
+import { findByTags, getOperatorQuery, operatorsFilter } from '../../../common/utils/queries';
 
 const operators = [
   {
@@ -53,6 +53,15 @@ const operators = [
 
 jest.mock('../../../common/utils/queries', () => {
   return {
+    getOperatorQuery: jest.fn().mockImplementation(() => ({
+      variables: {
+        tags: [],
+        first: 10,
+      },
+    })) as jest.MockedFunction<typeof getOperatorQuery>,
+    operatorsFilter: jest.fn().mockImplementation((txs) => txs) as jest.MockedFunction<
+      typeof operatorsFilter
+    >,
     findByTags: jest.fn().mockImplementation(() => {
       return {
         transactions: {
