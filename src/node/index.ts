@@ -37,6 +37,7 @@ import { listOperators } from '../common/queries/operator';
 import { listScripts } from '../common/queries/script';
 import { IEdge, IContractEdge, logLevels } from '../common/types/arweave';
 import { getAllResponses, getRequests, getResponses } from '../common/queries/inference';
+import { Configuration } from '../common/types/configuration';
 
 const walletError = 'Wallet not set';
 
@@ -191,7 +192,10 @@ export default abstract class FairSDK {
     return getUBalance(this._address);
   };
 
-  public static prompt = async (content: string) => {
+  public static prompt = async (
+    content: string,
+    configuration: Configuration = { createAtomicAssets: true },
+  ) => {
     if (!this._address || !this._wallet) {
       throw new Error(walletError);
     }
@@ -219,6 +223,7 @@ export default abstract class FairSDK {
         content,
         this._address,
         this._bundlr,
+        configuration,
       );
       logger.info(`Inference result: ${JSON.stringify(result)}`);
     }

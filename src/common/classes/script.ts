@@ -32,6 +32,7 @@ export class FairScript {
   private readonly _rawTx: IContractEdge | IEdge;
   private readonly _paymentId: string;
   private readonly _timestamp: number;
+  private readonly _isStableDiffusion: boolean;
 
   constructor(tx: IContractEdge | IEdge) {
     const txid = findTag(tx, 'scriptTransaction');
@@ -45,6 +46,7 @@ export class FairScript {
     this._rawTx = tx;
     this._paymentId = tx.node.id;
     this._timestamp = parseInt(findTag(tx, 'unixTime') as string, 10);
+    this._isStableDiffusion = findTag(tx, 'outputConfiguration') === 'stable-diffusion';
   }
 
   public get owner() {
@@ -69,5 +71,9 @@ export class FairScript {
 
   public get timestamp() {
     return this._timestamp;
+  }
+
+  public get isStableDiffusion() {
+    return this._isStableDiffusion;
   }
 }

@@ -16,7 +16,6 @@
 import { IContractEdge, IEdge } from '../types/arweave';
 import { findTag, getTxOwner } from '../utils/common';
 import {
-  DEFAULT_TAGS_FOR_TOKENS,
   TAG_NAMES,
   SCRIPT_INFERENCE_RESPONSE,
   SCRIPT_INFERENCE_REQUEST,
@@ -40,7 +39,7 @@ export const getResponses = async (userAddr: string, requestIds: string[]) => {
   const owners = await getTxOwners(requestIds);
 
   const tagsResponses = [
-    ...DEFAULT_TAGS_FOR_TOKENS,
+    ...DEFAULT_TAGS,
     /* { name: TAG_NAMES.scriptName, values: [state.scriptName] },
     { name: TAG_NAMES.scriptCurator, values: [state.scriptCurator] }, */
     { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_RESPONSE] },
@@ -57,7 +56,7 @@ export const getResponses = async (userAddr: string, requestIds: string[]) => {
 
 export const getAllResponses = async (userAddr: string, limit = DEFAULT_LIMIT) => {
   const tagsResponses = [
-    ...DEFAULT_TAGS_FOR_TOKENS,
+    ...DEFAULT_TAGS,
     /* { name: TAG_NAMES.scriptName, values: [state.scriptName] },
     { name: TAG_NAMES.scriptCurator, values: [state.scriptCurator] }, */
     { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_RESPONSE] },

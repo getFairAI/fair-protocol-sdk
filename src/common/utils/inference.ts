@@ -16,7 +16,7 @@
 import { Tag } from 'warp-contracts';
 import { FairScript } from '../classes/script';
 import { ITag } from '../types/arweave';
-import { logger } from './common';
+import { getUsdCost, logger } from './common';
 import {
   TAG_NAMES,
   INFERENCE_PAYMENT,
@@ -29,10 +29,71 @@ import {
   SCRIPT_INFERENCE_REQUEST,
   PROTOCOL_NAME,
   PROTOCOL_VERSION,
+  TX_ORIGIN,
+  ATOMIC_ASSET_CONTRACT_SOURCE_ID,
+  UDL_ID,
+  U_DIVIDER,
 } from './constants';
 import { sendU } from './warp';
+import { Configuration } from '../types/configuration';
 
 const RADIX = 10;
+
+const addAssetTags = (tags: ITag[], userAddr: string) => {
+  // add atomic asset tags
+  const manifest = {
+    evaluationOptions: {
+      sourceType: 'redstone-sequencer',
+      allowBigInt: true,
+      internalWrites: true,
+      unsafeClient: 'skip',
+      useConstructor: false,
+    },
+  };
+  const initState = {
+    firstOwner: userAddr,
+    canEvolve: false,
+    balances: {
+      [userAddr]: 1,
+    },
+    name: 'Fair Protocol Prompt Atomic Asset',
+    ticker: 'FPPAA',
+  };
+
+  tags.push({ name: TAG_NAMES.appName, value: 'SmartWeaveContract' });
+  tags.push({ name: TAG_NAMES.appVersion, value: '0.3.0' });
+  tags.push({ name: TAG_NAMES.contractSrc, value: ATOMIC_ASSET_CONTRACT_SOURCE_ID }); // use contract source here
+  tags.push({
+    name: TAG_NAMES.contractManifest,
+    value: JSON.stringify(manifest),
+  });
+  tags.push({
+    name: TAG_NAMES.initState,
+    value: JSON.stringify(initState),
+  });
+};
+
+const addConfigTags = (tags: ITag[], configuration: Configuration) => {
+  if (configuration.assetNames) {
+    tags.push({ name: TAG_NAMES.assetNames, value: JSON.stringify(configuration.assetNames) });
+  }
+
+  if (configuration.negativePrompt) {
+    tags.push({ name: TAG_NAMES.negativePrompt, value: configuration.negativePrompt });
+  }
+
+  if (configuration.description) {
+    tags.push({ name: TAG_NAMES.description, value: configuration.description });
+  }
+
+  if (configuration.customTags && configuration.customTags?.length > 0) {
+    tags.push({ name: TAG_NAMES.userCustomTags, value: JSON.stringify(configuration.customTags) });
+  }
+
+  if (configuration.nImages && configuration.nImages > 0) {
+    tags.push({ name: TAG_NAMES.nImages, value: configuration.nImages.toString() });
+  }
+};
 
 export const handlePayment = async (
   bundlrId: string,
@@ -42,6 +103,7 @@ export const handlePayment = async (
   conversationId: number,
   modelCreator: string,
   operatorAddrr: string,
+  configuration: Configuration,
 ) => {
   const parsedUFee = parseFloat(inferenceFee);
   const paymentTags = [
@@ -57,13 +119,27 @@ export const handlePayment = async (
     { name: TAG_NAMES.inferenceTransaction, value: bundlrId },
     { name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() },
     { name: TAG_NAMES.contentType, value: contentType },
-    { name: TAG_NAMES.txOrigin, value: 'Fair Protocol SDK' },
+    { name: TAG_NAMES.txOrigin, value: TX_ORIGIN },
   ];
 
-  const operatorFeeShare = parsedUFee * OPERATOR_PERCENTAGE_FEE;
-  const marketPlaceFeeShare = parsedUFee * MARKETPLACE_PERCENTAGE_FEE;
-  const creatorFeeShare = parsedUFee * CREATOR_PERCENTAGE_FEE;
-  const curatorFeeShare = parsedUFee * CURATOR_PERCENTAGE_FEE;
+  addConfigTags(paymentTags, configuration);
+
+  let adjustedInferenceFee = parsedUFee;
+  if (script.isStableDiffusion && configuration.nImages && configuration.nImages > 0) {
+    // calculate fee for n-images
+    adjustedInferenceFee = parsedUFee * configuration.nImages;
+  } else if (script.isStableDiffusion) {
+    // default n images is 4 if not specified
+    const defaultNImages = 4;
+    adjustedInferenceFee = parsedUFee * defaultNImages;
+  } else {
+    // no need to change inference fee
+  }
+
+  const operatorFeeShare = adjustedInferenceFee * OPERATOR_PERCENTAGE_FEE;
+  const marketPlaceFeeShare = adjustedInferenceFee * MARKETPLACE_PERCENTAGE_FEE;
+  const creatorFeeShare = adjustedInferenceFee * CREATOR_PERCENTAGE_FEE;
+  const curatorFeeShare = adjustedInferenceFee * CURATOR_PERCENTAGE_FEE;
 
   // pay operator
   const operatorPaymentTx = await sendU(
@@ -92,7 +168,12 @@ export const handlePayment = async (
 
   logger.info('Payment Successful');
 
+  const nDigits = 4;
+  const uCost = adjustedInferenceFee * U_DIVIDER;
+  const usdCost = (await getUsdCost(uCost)).toFixed(nDigits);
   return {
+    totalUCost: uCost,
+    totalUsdCost: usdCost,
     operatorPaymentTx,
     curatorPaymentTx,
     creatorPaymentTx,
@@ -100,8 +181,16 @@ export const handlePayment = async (
   };
 };
 
-export const getUploadTags = (script: FairScript, operatorAddr: string, conversationId: number) => {
-  const tags: ITag[] = [];
+export const getUploadTags = (
+  script: FairScript,
+  operatorAddr: string,
+  userAddr: string,
+  conversationId: number,
+  contentType: string,
+  configuration: Configuration,
+  fileName?: string,
+) => {
+  const tags = [];
   tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
   tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
   tags.push({ name: TAG_NAMES.scriptName, value: script.name });
@@ -110,10 +199,25 @@ export const getUploadTags = (script: FairScript, operatorAddr: string, conversa
   tags.push({ name: TAG_NAMES.scriptOperator, value: operatorAddr });
   tags.push({ name: TAG_NAMES.operationName, value: SCRIPT_INFERENCE_REQUEST });
   tags.push({ name: TAG_NAMES.conversationIdentifier, value: `${conversationId}` });
+  if (fileName) {
+    tags.push({ name: TAG_NAMES.fileName, value: fileName });
+  }
   const tempDate = Date.now() / secondInMS;
   tags.push({ name: TAG_NAMES.unixTime, value: tempDate.toString() });
-  tags.push({ name: TAG_NAMES.contentType, value: 'text/plain' });
-  tags.push({ name: TAG_NAMES.txOrigin, value: 'Fair Protocol SDK' });
+  tags.push({ name: TAG_NAMES.contentType, value: contentType });
+  tags.push({ name: TAG_NAMES.txOrigin, value: TX_ORIGIN });
+
+  addConfigTags(tags, configuration);
+
+  if (configuration.createAtomicAssets) {
+    addAssetTags(tags, userAddr);
+  } else {
+    tags.push({ name: TAG_NAMES.skipAssetCreation, value: 'true' });
+  }
+
+  tags.push({ name: TAG_NAMES.license, value: UDL_ID });
+  tags.push({ name: TAG_NAMES.derivation, value: 'Allowed-With-License-Passthrough' });
+  tags.push({ name: TAG_NAMES.commercialUse, value: 'Allowed' });
 
   return tags;
 };

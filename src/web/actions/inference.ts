@@ -21,6 +21,7 @@ import { getLastConversationId } from '../../common/queries/inference';
 import { getUploadTags, handlePayment } from '../../common/utils/inference';
 import { createTx } from '../utils/arweave';
 import type Arweave from 'arweave/web';
+import { Configuration } from '../../common/types/configuration';
 
 const inference = async (
   arweave: Arweave,
@@ -29,9 +30,17 @@ const inference = async (
   operator: FairOperator,
   prompt: string,
   userAddr: string,
+  configuration: Configuration,
 ) => {
   const conversationId = await getLastConversationId(userAddr, script);
-  const tags = getUploadTags(script, operator.owner, conversationId);
+  const tags = getUploadTags(
+    script,
+    operator.owner,
+    userAddr,
+    conversationId,
+    'text/plain',
+    configuration,
+  );
 
   try {
     const tx = await createTx(arweave, prompt, tags);
@@ -49,6 +58,7 @@ const inference = async (
       conversationId,
       model.owner,
       operator.owner,
+      configuration,
     );
   } catch (error) {
     throw new Error(JSON.stringify(error));

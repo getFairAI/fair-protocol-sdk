@@ -16,7 +16,6 @@
 import {
   CANCEL_OPERATION,
   DEFAULT_TAGS,
-  DEFAULT_TAGS_FOR_TOKENS,
   INFERENCE_PAYMENT,
   MARKETPLACE_ADDRESS,
   MODEL_DELETION,
@@ -29,6 +28,7 @@ import {
 import { IContractEdge, IEdge, ITagFilter } from '../types/arweave';
 import { findByTags, getTxWithOwners } from './queries';
 import { default as Pino } from 'pino';
+import redstone from 'redstone-api';
 
 export const logger = Pino({
   name: 'Fair-SDK',
@@ -69,7 +69,7 @@ const getOperatorRequests = async (
 
 const hasOperatorAnswered = async (request: IEdge | IContractEdge, opAddress: string) => {
   const responseTags: ITagFilter[] = [
-    ...DEFAULT_TAGS_FOR_TOKENS,
+    ...DEFAULT_TAGS,
     {
       name: TAG_NAMES.requestTransaction,
       values: [findTag(request, 'inferenceTransaction') as string],
@@ -189,4 +189,14 @@ export const filterPreviousVersions = <T extends Array<IContractEdge | IEdge>>(d
         (oldTxId) => el.node.id === oldTxId || findTag(el, 'scriptTransaction') === oldTxId,
       ),
   ) as T;
+};
+
+export const getArPriceUSD = async () => {
+  const price = await redstone.getPrice('AR');
+  return price.value;
+};
+
+export const getUsdCost = async (cost: number) => {
+  const arPrice = await getArPriceUSD();
+  return cost * arPrice;
 };

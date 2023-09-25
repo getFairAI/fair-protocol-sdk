@@ -34,6 +34,7 @@ import { listOperators } from '../common/queries/operator';
 import { listScripts } from '../common/queries/script';
 import { IEdge, IContractEdge, logLevels } from '../common/types/arweave';
 import { getAllResponses, getRequests, getResponses } from '../common/queries/inference';
+import { Configuration } from '../common/types/configuration';
 
 const walletError = 'Wallet not connected';
 
@@ -191,7 +192,10 @@ export default abstract class FairSDKWeb {
     }
   };
 
-  public static prompt = async (content: string) => {
+  public static prompt = async (
+    content: string,
+    configuration: Configuration = { createAtomicAssets: true },
+  ) => {
     if (!this._arweave) {
       throw new Error("Arweave not initialized. Please run 'FairSDK.init()' first.");
     }
@@ -219,6 +223,7 @@ export default abstract class FairSDKWeb {
         this._operator,
         content,
         this._address,
+        configuration,
       );
       logger.info(`Inference result: ${JSON.stringify(result)}`);
     }
