@@ -17,7 +17,7 @@ import { FairOperator } from '../classes/operator';
 import { IContractEdge, IEdge, listFilterParams } from '../types/arweave';
 import {
   findByTags,
-  getOperatorQuery,
+  getOperatorsQuery,
   getOperatorQueryForScript,
   operatorsFilter,
 } from '../utils/queries';
@@ -32,7 +32,7 @@ const _queryOperators = async (scriptId?: string, scriptName?: string, scriptCur
     if (scriptId) {
       variables = getOperatorQueryForScript(scriptId, scriptName, scriptCurator).variables;
     } else {
-      variables = getOperatorQuery().variables;
+      variables = getOperatorsQuery().variables;
     }
     const tags = variables.tags;
     const first = variables.first;

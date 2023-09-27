@@ -16,19 +16,26 @@
 import { GraphQLClient, gql } from 'graphql-request';
 import {
   CANCEL_OPERATION,
+  CONVERSATION_START,
+  CREATOR_PERCENTAGE_FEE,
+  CURATOR_PERCENTAGE_FEE,
   DEFAULT_TAGS,
   INFERENCE_PAYMENT,
   MARKETPLACE_ADDRESS,
+  MARKETPLACE_PERCENTAGE_FEE,
   MODEL_CREATION_PAYMENT_TAGS,
   MODEL_DELETION,
   NET_ARWEAVE_URL,
   N_PREVIOUS_BLOCKS,
   OPERATOR_REGISTRATION_PAYMENT_TAGS,
+  PROTOCOL_NAME,
   SCRIPT_CREATION_PAYMENT_TAGS,
   SCRIPT_DELETION,
+  SCRIPT_INFERENCE_REQUEST,
   SCRIPT_INFERENCE_RESPONSE,
   TAG_NAMES,
   U_CONTRACT_ID,
+  VAULT_ADDRESS,
 } from './constants';
 import {
   IContractEdge,
@@ -38,14 +45,46 @@ import {
   ITagFilter,
 } from '../types/arweave';
 import { filterByUniqueScriptTxId, filterPreviousVersions, findTag } from './common';
+import { isUTxValid } from './warp';
+import { FairScript } from '../classes/script';
 
 const DEFAULT_PAGE_SIZE = 10;
+const RADIX = 10;
 
 const client = new GraphQLClient(`${NET_ARWEAVE_URL}/graphql`);
 
 const FIND_BY_TAGS = gql`
   query FIND_BY_TAGS($tags: [TagFilter!], $first: Int!, $after: String) {
     transactions(tags: $tags, first: $first, after: $after, sort: HEIGHT_DESC) {
+      pageInfo {
+        hasNextPage
+      }
+      edges {
+        cursor
+        node {
+          id
+          tags {
+            name
+            value
+          }
+          owner {
+            address
+            key
+          }
+        }
+      }
+    }
+  }
+`;
+
+const FIND_BY_TAGS_WITH_OWNERS = gql`
+  query FIND_BY_TAGS_WITH_OWNERS(
+    $owners: [String!]
+    $tags: [TagFilter!]
+    $first: Int!
+    $after: String
+  ) {
+    transactions(owners: $owners, tags: $tags, first: $first, after: $after, sort: HEIGHT_DESC) {
       pageInfo {
         hasNextPage
       }
@@ -238,54 +277,174 @@ export const getTxsWithOwners = async (tags: ITagFilter[], owners: string[], fir
   return txs;
 };
 
+const queryCheckUserPayment = async (
+  inferenceTransaction: string,
+  userAddress: string,
+  scriptId: string,
+) => {
+  const tags = [
+    {
+      name: TAG_NAMES.protocolName,
+      values: [PROTOCOL_NAME],
+    },
+    {
+      name: TAG_NAMES.operationName,
+      values: [INFERENCE_PAYMENT],
+    },
+    {
+      name: TAG_NAMES.scriptTransaction,
+      values: [scriptId],
+    },
+    {
+      name: TAG_NAMES.inferenceTransaction,
+      values: [inferenceTransaction],
+    },
+    {
+      name: TAG_NAMES.contract,
+      values: [U_CONTRACT_ID],
+    },
+    {
+      name: TAG_NAMES.sequencerOwner,
+      values: [userAddress],
+    },
+  ];
+
+  const result: IQueryResult = await client.request(FIND_BY_TAGS, {
+    variables: { tags, first: 4 },
+  });
+
+  return result.transactions.edges;
+};
+
+export const checkUserPaidInferenceFees = async (
+  txid: string,
+  userAddress: string,
+  creatorAddress: string,
+  curatorAddress: string,
+  operatorFee: number,
+  scriptId: string,
+) => {
+  const marketplaceShare = operatorFee * MARKETPLACE_PERCENTAGE_FEE;
+  const curatorShare = operatorFee * CURATOR_PERCENTAGE_FEE;
+  const creatorShare = operatorFee * CREATOR_PERCENTAGE_FEE;
+
+  const paymentTxs = await queryCheckUserPayment(txid, userAddress, scriptId);
+  const necessaryPayments = 3;
+
+  if (paymentTxs.length < necessaryPayments) {
+    return false;
+  } else {
+    const validPayments = paymentTxs.filter((tx) => {
+      try {
+        const input = findTag(tx, 'input');
+        if (!input) {
+          return false;
+        }
+
+        const inputObj = JSON.parse(input);
+        const qty = parseInt(inputObj.qty, 10);
+        if (inputObj.function !== inputFnName) {
+          return false;
+        } else if (qty >= marketplaceShare && inputObj.target === VAULT_ADDRESS) {
+          return true;
+        } else if (qty >= curatorShare && inputObj.target === curatorAddress) {
+          return true;
+        } else if (qty >= creatorShare && inputObj.target === creatorAddress) {
+          return true;
+        } else {
+          return false;
+        }
+      } catch (error) {
+        return false;
+      }
+    });
+
+    return validPayments.length >= necessaryPayments;
+  }
+};
+
 // app logic
-const getOperatorRequests = async (
-  address: string,
+const checkLastRequests = async (
+  operatorAddr: string,
   operatorFee: string,
   scriptName: string,
   scriptCurator: string,
+  isStableDiffusion?: boolean,
 ) => {
-  const qty = parseFloat(operatorFee);
-  const requestPaymentsInputNumber = JSON.stringify({
-    function: inputFnName,
-    target: address,
-    qty,
-  });
-  const requestPaymentsInputStr = JSON.stringify({
-    function: inputFnName,
-    target: address,
-    qty: qty.toString(),
-  });
-  const data = await findByTags(
-    [
-      ...DEFAULT_TAGS,
-      { name: TAG_NAMES.contract, values: [U_CONTRACT_ID] },
-      { name: TAG_NAMES.operationName, values: [INFERENCE_PAYMENT] },
-      { name: TAG_NAMES.scriptName, values: [scriptName] },
-      { name: TAG_NAMES.scriptCurator, values: [scriptCurator] },
-    ],
+  const { query, variables } = getRequestsQuery(
+    undefined,
+    scriptName,
+    scriptCurator,
+    operatorAddr,
+    undefined,
     N_PREVIOUS_BLOCKS,
   );
 
-  return data.transactions.edges.filter((el: IContractEdge) => {
-    try {
-      const inputTag = findTag(el, 'input');
-      if (!inputTag) {
-        return false;
-      } else if (inputTag === requestPaymentsInputNumber || inputTag === requestPaymentsInputStr) {
-        return true;
-      } else {
-        const inputObj: { qty: number | string; function: string; target: string } =
-          JSON.parse(inputTag);
-        const qtyNumber =
-          typeof inputObj.qty === 'string' ? parseFloat(inputObj.qty) : inputObj.qty;
-
-        return qtyNumber >= qty && inputObj.function === inputFnName && inputObj.target === address;
-      }
-    } catch (err) {
-      return false;
-    }
+  const data: IQueryResult = await client.request(query, {
+    variables,
   });
+
+  const baseFee = parseFloat(operatorFee);
+
+  const validTxs: IEdge[] = [];
+  for (const requestTx of data.transactions.edges) {
+    const nImages = findTag(requestTx, 'nImages');
+    const userAddr = requestTx.node.owner.address;
+    const creatorAddr = findTag(requestTx, 'modelCreator') as string;
+    const curatorAddr = findTag(requestTx, 'scriptCurator') as string;
+    const scriptId = findTag(requestTx, 'scriptTransaction') as string;
+
+    let isValidRequest = false;
+    if (
+      isStableDiffusion &&
+      nImages &&
+      (parseInt(nImages, RADIX) > 0 || parseInt(nImages, RADIX) < 10)
+    ) {
+      const actualFee = baseFee * parseInt(nImages, RADIX);
+
+      isValidRequest = await checkUserPaidInferenceFees(
+        requestTx.node.id,
+        userAddr,
+        creatorAddr,
+        curatorAddr,
+        actualFee,
+        scriptId,
+      );
+    } else if (isStableDiffusion) {
+      // default nImages
+      const defaultNImages = 4;
+      const actualFee = baseFee * defaultNImages;
+
+      isValidRequest = await checkUserPaidInferenceFees(
+        requestTx.node.id,
+        userAddr,
+        creatorAddr,
+        curatorAddr,
+        actualFee,
+        scriptId,
+      );
+    } else {
+      isValidRequest = await checkUserPaidInferenceFees(
+        requestTx.node.id,
+        userAddr,
+        creatorAddr,
+        curatorAddr,
+        baseFee,
+        scriptId,
+      );
+    }
+
+    if (isValidRequest) {
+      const hasAnswered = await hasOperatorAnswered(requestTx, operatorAddr);
+      if (hasAnswered) {
+        validTxs.push(requestTx);
+      }
+    } else {
+      // ignore
+    }
+  }
+
+  return validTxs.length === data.transactions.edges.length;
 };
 
 const hasOperatorAnswered = async (request: IEdge | IContractEdge, opAddress: string) => {
@@ -325,22 +484,14 @@ const isValidRegistration = async (
   opAddress: string,
   scriptName: string,
   scriptCurator: string,
+  isStableDiffusion?: boolean,
 ) => {
   const isCancelledTx = await isCancelled(txid, opAddress);
   if (isCancelledTx) {
     return false;
   }
 
-  const lastRequests = await getOperatorRequests(opAddress, operatorFee, scriptName, scriptCurator);
-  for (const request of lastRequests) {
-    // check if operator has answered last 7 requests
-    if (!(await hasOperatorAnswered(request, opAddress))) {
-      // if any of the last 7 requests has not been answered, the operator is not valid
-      return false;
-    }
-  }
-
-  return true;
+  return checkLastRequests(opAddress, operatorFee, scriptName, scriptCurator, isStableDiffusion);
 };
 
 const checkHasOperators = async (
@@ -352,6 +503,7 @@ const checkHasOperators = async (
   const scriptId = (findTag(scriptTx, 'scriptTransaction') as string) ?? scriptTx.node.id;
   const scriptName = findTag(scriptTx, 'scriptName') as string;
   const scriptCurator = findTag(scriptTx, 'scriptCurator') as string;
+  const isStableDiffusion = findTag(scriptTx, 'outputConfiguration') as string;
 
   const { variables } = getOperatorQueryForScript(
     scriptId,
@@ -383,6 +535,7 @@ const checkHasOperators = async (
           registrationOwner,
           scriptName,
           scriptCurator,
+          !!isStableDiffusion && isStableDiffusion === 'stable-diffusion',
         )
       ) {
         filtered.push(scriptTx);
@@ -401,9 +554,18 @@ const checkOpResponses = async (el: IContractEdge, filtered: IContractEdge[]) =>
   const scriptName = findTag(el, 'scriptName') as string;
   const scriptCurator = findTag(el, 'scriptCurator') as string;
   const registrationOwner = (findTag(el, 'sequencerOwner') as string) ?? el.node.owner.address;
+  const scriptTx = await getById(findTag(el, 'scriptTransaction') as string);
+  const isStableDiffusion = findTag(scriptTx, 'outputConfiguration') as string;
 
   if (
-    !(await isValidRegistration(el.node.id, opFee, registrationOwner, scriptName, scriptCurator))
+    !(await isValidRegistration(
+      el.node.id,
+      opFee,
+      registrationOwner,
+      scriptName,
+      scriptCurator,
+      !!isStableDiffusion && isStableDiffusion === 'stable-diffusion',
+    ))
   ) {
     filtered.splice(
       filtered.findIndex((existing) => el.node.id === existing.node.id),
@@ -445,13 +607,17 @@ export const modelsFilter = async (data: IContractEdge[]) => {
   for (const el of data) {
     const modelId = findTag(el, 'modelTransaction') as string;
     const modelOwner = findTag(el, 'sequencerOwner') as string;
+    const sequencerId = findTag(el, 'sequencerTxId') as string;
 
-    if (!modelOwner || !modelId) {
+    const isValidPayment = await isUTxValid(sequencerId);
+    if (!isValidPayment) {
       // ignore
-    } else if (!(await isFakeDeleted(modelId, modelOwner, 'model'))) {
-      filtered.push(el);
+    } else if (!modelOwner || !modelId) {
+      // ignore
+    } else if (await isFakeDeleted(modelId, modelOwner, 'model')) {
+      // ignore
     } else {
-      // ignore
+      filtered.push(el);
     }
   }
 
@@ -465,7 +631,15 @@ export const scriptsFilter = async (data: IContractEdge[]) => {
   for (const el of filteredScritps) {
     const scriptId = findTag(el, 'scriptTransaction') as string;
     const scriptOwner = findTag(el, 'sequencerOwner') as string;
-    if (await isFakeDeleted(scriptId, scriptOwner, 'script')) {
+    const sequencerId = findTag(el, 'sequencerTxId') as string;
+
+    const isValidPayment = await isUTxValid(sequencerId);
+
+    if (!isValidPayment) {
+      // ignore
+    } else if (!scriptOwner || !scriptId) {
+      // ignore
+    } else if (await isFakeDeleted(scriptId, scriptOwner, 'script')) {
       // if fake deleted ignore
     } else {
       await checkHasOperators(el, filtered);
@@ -512,7 +686,7 @@ export const getScriptQueryForModel = (
   };
 };
 
-export const getOperatorQuery = (first = DEFAULT_PAGE_SIZE, after?: string) => ({
+export const getOperatorsQuery = (first = DEFAULT_PAGE_SIZE, after?: string) => ({
   query: FIND_BY_TAGS,
   variables: {
     tags: [...DEFAULT_TAGS, ...OPERATOR_REGISTRATION_PAYMENT_TAGS],
@@ -552,9 +726,163 @@ export const getOperatorQueryForScript = (
 export const operatorsFilter = async (data: IContractEdge[]) => {
   const filtered: IContractEdge[] = [];
   for (const el of data) {
-    filtered.push(el);
-    await checkOpResponses(el, filtered);
+    const sequencerId = findTag(el, 'sequencerTxId') as string;
+
+    const isValidPayment = await isUTxValid(sequencerId);
+    if (!isValidPayment) {
+      // ignore
+    } else {
+      filtered.push(el);
+      await checkOpResponses(el, filtered);
+    }
   }
 
   return filtered;
+};
+
+export const getLastConversationId = async (userAddr: string, script: FairScript) => {
+  const tags = [
+    ...DEFAULT_TAGS,
+    {
+      name: TAG_NAMES.operationName,
+      values: [CONVERSATION_START],
+    },
+    {
+      name: TAG_NAMES.scriptTransaction,
+      values: [script.txid],
+    },
+    { name: TAG_NAMES.scriptName, values: [script.name] },
+    { name: TAG_NAMES.scriptCurator, values: [script.owner] },
+  ];
+  const owners = [userAddr];
+
+  const data = await getTxWithOwners(tags, owners);
+
+  if (data?.length > 0) {
+    const tx = data[0];
+    const conversationId = findTag(tx, 'conversationIdentifier');
+    if (conversationId) {
+      return parseInt(conversationId, DEFAULT_PAGE_SIZE);
+    } else {
+      return 1;
+    }
+  } else {
+    return 1;
+  }
+};
+
+export const getRequestsQuery = (
+  userAddress?: string,
+  scriptName?: string,
+  scriptCurator?: string,
+  scriptOperator?: string,
+  currenctConversationId?: number,
+  first = DEFAULT_PAGE_SIZE,
+  after?: string,
+) => {
+  const tags = [
+    ...DEFAULT_TAGS,
+    { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_REQUEST] },
+  ];
+  if (scriptName) {
+    tags.push({ name: TAG_NAMES.scriptName, values: [scriptName] });
+  }
+
+  if (scriptCurator) {
+    tags.push({ name: TAG_NAMES.scriptCurator, values: [scriptCurator] });
+  }
+
+  if (scriptOperator) {
+    tags.push({ name: TAG_NAMES.scriptOperator, values: [scriptOperator] });
+  }
+
+  if (currenctConversationId) {
+    tags.push({ name: TAG_NAMES.conversationIdentifier, values: [`${currenctConversationId}`] });
+  }
+
+  if (userAddress) {
+    return {
+      query: FIND_BY_TAGS_WITH_OWNERS,
+      variables: {
+        owners: [userAddress],
+        tags,
+        first,
+        after,
+      },
+    };
+  } else {
+    return {
+      query: FIND_BY_TAGS,
+      variables: {
+        tags,
+        first,
+        after,
+      },
+    };
+  }
+};
+
+export const getResponsesQuery = (
+  requestIds: string[],
+  userAddress?: string,
+  scriptName?: string,
+  scriptCurator?: string,
+  scriptOperator?: string,
+  currenctConversationId?: number,
+  first = DEFAULT_PAGE_SIZE,
+  after?: string,
+) => {
+  const tags = [
+    ...DEFAULT_TAGS,
+    { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_RESPONSE] },
+  ];
+
+  if (requestIds.length > 0) {
+    tags.push({ name: TAG_NAMES.requestTransaction, values: requestIds });
+  }
+
+  if (userAddress) {
+    tags.push({ name: TAG_NAMES.scriptUser, values: [userAddress] });
+  }
+
+  if (scriptName) {
+    tags.push({ name: TAG_NAMES.scriptName, values: [scriptName] });
+  }
+
+  if (scriptCurator) {
+    tags.push({ name: TAG_NAMES.scriptCurator, values: [scriptCurator] });
+  }
+
+  if (currenctConversationId) {
+    tags.push({ name: TAG_NAMES.conversationIdentifier, values: [`${currenctConversationId}`] });
+  }
+
+  if (scriptOperator) {
+    return {
+      query: FIND_BY_TAGS_WITH_OWNERS,
+      variables: {
+        owners: [scriptOperator],
+        tags,
+        first,
+        after,
+      },
+    };
+  } else {
+    return {
+      query: FIND_BY_TAGS,
+      variables: {
+        tags,
+        first,
+        after,
+      },
+    };
+  }
+};
+
+export const runQuery = async (query: string, variables: unknown) => {
+  const data: IQueryResult = await client.request(query, {
+    variables,
+  });
+
+  return data;
 };

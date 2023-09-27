@@ -33,8 +33,9 @@ import { listModels } from '../common/queries/model';
 import { listOperators } from '../common/queries/operator';
 import { listScripts } from '../common/queries/script';
 import { IEdge, IContractEdge, logLevels } from '../common/types/arweave';
-import { getAllResponses, getRequests, getResponses } from '../common/queries/inference';
 import { Configuration } from '../common/types/configuration';
+import { getRequests, getResponses } from '../common/queries/inference';
+import * as queryUtils from './../common/utils/queries';
 
 const walletError = 'Wallet not connected';
 
@@ -66,32 +67,49 @@ export default abstract class FairSDKWeb {
     }
   }
 
-  public static get queries() {
+  public static get query() {
     return {
       listModels,
       listScripts,
       listOperators,
-      getResponses: async (requestIds: string[]) => {
-        if (!this._address) {
-          throw new Error(walletError);
-        } else {
-          return getResponses(this._address, requestIds);
-        }
-      },
-      getAllResponses: (limit: number) => {
-        if (!this._address) {
-          throw new Error(walletError);
-        } else {
-          return getAllResponses(this._address, limit);
-        }
-      },
-      getRequests: (limit: number) => {
-        if (!this._address) {
-          throw new Error(walletError);
-        } else {
-          return getRequests(this._address, limit);
-        }
-      },
+      getResponses: (
+        requestIds: string[],
+        scriptName?: string,
+        scriptCurator?: string,
+        scriptOperator?: string,
+        conversationIdentifier?: number,
+        first?: number | 'all',
+      ) =>
+        getResponses(
+          requestIds,
+          this._address,
+          scriptName,
+          scriptCurator,
+          scriptOperator,
+          conversationIdentifier,
+          first,
+        ),
+      getRequests: (
+        scriptName?: string | undefined,
+        scriptCurator?: string | undefined,
+        scriptOperator?: string | undefined,
+        conversationIdentifier?: number | undefined,
+        first?: number | 'all',
+      ) =>
+        getRequests(
+          this._address,
+          scriptName,
+          scriptCurator,
+          scriptOperator,
+          conversationIdentifier,
+          first,
+        ),
+    };
+  }
+
+  public static get utils() {
+    return {
+      ...queryUtils,
     };
   }
 

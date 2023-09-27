@@ -36,8 +36,9 @@ import { listModels } from '../common/queries/model';
 import { listOperators } from '../common/queries/operator';
 import { listScripts } from '../common/queries/script';
 import { IEdge, IContractEdge, logLevels } from '../common/types/arweave';
-import { getAllResponses, getRequests, getResponses } from '../common/queries/inference';
 import { Configuration } from '../common/types/configuration';
+import { getRequests, getResponses } from '../common/queries/inference';
+import * as queryUtils from './../common/utils/queries';
 
 const walletError = 'Wallet not set';
 
@@ -77,14 +78,49 @@ export default abstract class FairSDK {
     }
   }
 
-  public static get queries() {
+  public static get query() {
     return {
       listModels,
       listScripts,
       listOperators,
-      getResponses: (requestIds: string[]) => getResponses(this._address, requestIds),
-      getAllResponses: (limit: number) => getAllResponses(this._address, limit),
-      getRequests: (limit: number) => getRequests(this._address, limit),
+      getResponses: (
+        requestIds: string[],
+        scriptName?: string,
+        scriptCurator?: string,
+        scriptOperator?: string,
+        conversationIdentifier?: number,
+        first?: number | 'all',
+      ) =>
+        getResponses(
+          requestIds,
+          this._address,
+          scriptName,
+          scriptCurator,
+          scriptOperator,
+          conversationIdentifier,
+          first,
+        ),
+      getRequests: (
+        scriptName?: string | undefined,
+        scriptCurator?: string | undefined,
+        scriptOperator?: string | undefined,
+        conversationIdentifier?: number | undefined,
+        first?: number | 'all',
+      ) =>
+        getRequests(
+          this._address,
+          scriptName,
+          scriptCurator,
+          scriptOperator,
+          conversationIdentifier,
+          first,
+        ),
+    };
+  }
+
+  public static get utils() {
+    return {
+      ...queryUtils,
     };
   }
 

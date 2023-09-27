@@ -103,6 +103,7 @@ export const TAG_NAMES = {
   derivation: 'Derivation',
   commercialUse: 'Commercial-Use',
   skipAssetCreation: 'Skip-Asset-Creation',
+  sequencerTxId: 'Sequencer-Tx-Id',
 };
 
 export const TX_ORIGIN = 'Fair Protocol SDK';
