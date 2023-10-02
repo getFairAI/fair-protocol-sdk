@@ -439,7 +439,8 @@ const checkLastRequests = async (
         validTxs.push(requestTx);
       }
     } else {
-      // ignore
+      // if user has not paid, ignore
+      validTxs.push(requestTx);
     }
   }
 
