@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { inference } from './actions/inference';
+import { requestInference } from './actions/inference';
 import {
   MODEL_CREATION_PAYMENT,
   SCRIPT_CREATION_PAYMENT,
@@ -36,6 +36,11 @@ import { IEdge, IContractEdge, logLevels } from '../common/types/arweave';
 import { Configuration } from '../common/types/configuration';
 import { getRequests, getResponses } from '../common/queries/inference';
 import * as queryUtils from './../common/utils/queries';
+import * as inferenceUtils from './../common/utils/inference';
+import * as commonUtils from './../common/utils/common';
+import * as warpUtils from './../common/utils/warp';
+import * as constants from './../common/utils/constants';
+import { handlePayment } from '../common/utils/inference';
 
 const walletError = 'Wallet not connected';
 
@@ -110,6 +115,10 @@ export default abstract class FairSDKWeb {
   public static get utils() {
     return {
       ...queryUtils,
+      ...constants,
+      ...commonUtils,
+      ...inferenceUtils,
+      ...warpUtils,
     };
   }
 
@@ -234,16 +243,31 @@ export default abstract class FairSDKWeb {
       if (uBalance < parsedOperatorFee) {
         throw new Error(`Insufficient U balance, needed ${parsedOperatorFee} U`);
       }
-      const result = await inference(
+      const conversationId = await queryUtils.getLastConversationId(this._address, this.script);
+
+      const result = await requestInference(
         this._arweave,
-        this._model,
         this._script,
         this._operator,
         content,
         this._address,
+        conversationId,
         configuration,
       );
-      logger.info(`Inference result: ${JSON.stringify(result)}`);
+      logger.info(`Inference result: ${result}`);
+
+      const paymentResult = await handlePayment(
+        result,
+        this._operator.fee,
+        'text/plain',
+        this.script,
+        conversationId,
+        this._model.owner,
+        this.operator.owner,
+        configuration,
+      );
+
+      logger.info(`Payment Successful: ${JSON.stringify(paymentResult)}`);
     }
   };
 

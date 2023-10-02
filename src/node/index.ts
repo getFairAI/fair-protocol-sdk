@@ -39,6 +39,10 @@ import { IEdge, IContractEdge, logLevels } from '../common/types/arweave';
 import { Configuration } from '../common/types/configuration';
 import { getRequests, getResponses } from '../common/queries/inference';
 import * as queryUtils from './../common/utils/queries';
+import * as inferenceUtils from './../common/utils/inference';
+import * as commonUtils from './../common/utils/common';
+import * as warpUtils from './../common/utils/warp';
+import * as constants from './../common/utils/constants';
 
 const walletError = 'Wallet not set';
 
@@ -121,6 +125,10 @@ export default abstract class FairSDK {
   public static get utils() {
     return {
       ...queryUtils,
+      ...constants,
+      ...commonUtils,
+      ...inferenceUtils,
+      ...warpUtils,
     };
   }
 

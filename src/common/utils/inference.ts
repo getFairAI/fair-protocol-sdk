@@ -171,6 +171,7 @@ export const handlePayment = async (
   const nDigits = 4;
   const uCost = adjustedInferenceFee * U_DIVIDER;
   const usdCost = (await getUsdCost(uCost)).toFixed(nDigits);
+
   return {
     totalUCost: uCost,
     totalUsdCost: usdCost,

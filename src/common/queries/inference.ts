@@ -26,8 +26,6 @@ export const getResponses = async (
   first?: number | 'all',
 ) => {
   if (first === 'all') {
-    first = undefined;
-
     let hasNextPage = false;
     let lastPaginationCursor = undefined;
     const txs: IEdge[] = [];
@@ -74,8 +72,6 @@ export const getRequests = async (
   first?: number | 'all',
 ) => {
   if (first === 'all') {
-    first = undefined;
-
     let hasNextPage = false;
     let lastPaginationCursor = undefined;
     const txs: IEdge[] = [];

@@ -119,7 +119,13 @@ await FairSDK.address; // returns loaded address
 
 await FairSDK.getArBalance(); // get ar balance for the current loaded wallet
 await FairSDK.getUBalance(); // get u balance for the current loaded wallet
-// **NOTE:** Set Wallet onlyu exists for node sdk
+
+
+// more utils using
+// TODO: Add mor edocumentation to utils
+const utils = FairSDK.utils;
+
+// **NOTE:** Set Wallet only exists for node sdk
 await FairSDK.setWallet('./wallet-user.json'); // load wallet into sdk
 // or web
 
@@ -131,6 +137,10 @@ FairSDKWeb.operator; // returns loaded operator (after FairSDKWeb.use)
 await FairSDKWeb.address; // returns loaded address
 await FairSDKWeb.getArBalance(); // get ar balance for the current loaded wallet
 await FairSDKWeb.getUBalance(); // get u balance for the current loaded wallet
+
+// more utils using
+// TODO: Add mor edocumentation to utils
+const utils = FairSDKWeb.utils;
 ```
 
 ## Development
