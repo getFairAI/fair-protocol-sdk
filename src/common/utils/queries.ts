@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { GraphQLClient, gql } from 'graphql-request';
+import { GraphQLClient, Variables, gql } from 'graphql-request';
 import {
   CANCEL_OPERATION,
   CONVERSATION_START,
@@ -310,7 +310,8 @@ const queryCheckUserPayment = async (
   ];
 
   const result: IQueryResult = await client.request(FIND_BY_TAGS, {
-    variables: { tags, first: 4 },
+    tags,
+    first: 4,
   });
 
   return result.transactions.edges;
@@ -380,9 +381,7 @@ const checkLastRequests = async (
     N_PREVIOUS_BLOCKS,
   );
 
-  const data: IQueryResult = await client.request(query, {
-    variables,
-  });
+  const data: IQueryResult = await client.request(query, variables as Variables);
 
   const baseFee = parseFloat(operatorFee);
 
@@ -879,10 +878,8 @@ export const getResponsesQuery = (
   }
 };
 
-export const runQuery = async (query: string, variables: unknown) => {
-  const data: IQueryResult = await client.request(query, {
-    variables,
-  });
+export const runQuery = async (query: string, variables: Variables) => {
+  const data: IQueryResult = await client.request(query, variables);
 
   return data;
 };

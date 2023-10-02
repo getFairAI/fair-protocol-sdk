@@ -63,11 +63,15 @@ export const sendU = async (to: string, amount: string | number, tags: Tags) => 
   return result?.originalTxId;
 };
 
-export const isUTxValid = async (sequencerTxID: string) => {
+export const isUTxValid = async (sequencerTxID?: string) => {
+  if (!sequencerTxID) {
+    logger.error('Invalid Sequencer Tx Id');
+    return false;
+  }
+
   try {
     const url = `${dreUrl}/validity?id=${sequencerTxID}&contractId=${U_CONTRACT_ID}`;
     const result = await fetch(url);
-    // const json = await result.json();
     const parsedResult: { validity: boolean } = await result.json();
 
     return parsedResult.validity;
