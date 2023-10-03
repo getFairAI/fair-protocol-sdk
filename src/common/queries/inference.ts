@@ -21,7 +21,7 @@ export const getResponses = async (
   userAddress?: string,
   scriptName?: string,
   scriptCurator?: string,
-  scriptOperator?: string,
+  scriptOperators?: string[],
   currenctConversationId?: number,
   first?: number | 'all',
 ) => {
@@ -35,7 +35,7 @@ export const getResponses = async (
         userAddress,
         scriptName,
         scriptCurator,
-        scriptOperator,
+        scriptOperators,
         currenctConversationId,
       );
       variables.after = lastPaginationCursor;
@@ -53,7 +53,7 @@ export const getResponses = async (
       userAddress,
       scriptName,
       scriptCurator,
-      scriptOperator,
+      scriptOperators,
       currenctConversationId,
       first,
     );

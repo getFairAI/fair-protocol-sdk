@@ -81,7 +81,7 @@ export default abstract class FairSDKWeb {
         requestIds: string[],
         scriptName?: string,
         scriptCurator?: string,
-        scriptOperator?: string,
+        scriptOperators?: string[],
         conversationIdentifier?: number,
         first?: number | 'all',
       ) =>
@@ -90,7 +90,7 @@ export default abstract class FairSDKWeb {
           this._address,
           scriptName,
           scriptCurator,
-          scriptOperator,
+          scriptOperators,
           conversationIdentifier,
           first,
         ),

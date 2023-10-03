@@ -827,7 +827,7 @@ export const getResponsesQuery = (
   userAddress?: string,
   scriptName?: string,
   scriptCurator?: string,
-  scriptOperator?: string,
+  scriptOperators?: string[],
   currenctConversationId?: number,
   first = DEFAULT_PAGE_SIZE,
   after?: string,
@@ -857,11 +857,11 @@ export const getResponsesQuery = (
     tags.push({ name: TAG_NAMES.conversationIdentifier, values: [`${currenctConversationId}`] });
   }
 
-  if (scriptOperator) {
+  if (scriptOperators && scriptOperators.length > 0) {
     return {
       query: FIND_BY_TAGS_WITH_OWNERS,
       variables: {
-        owners: [scriptOperator],
+        owners: scriptOperators,
         tags,
         first,
         after,
