@@ -25,6 +25,7 @@ export const UCM_CONTRACT_ID = 'tfalT8Z-88riNtoXdF5ldaBtmsfcSmbMqWLh2DHJIbg';
 export const UCM_DIVIDER = 1e6;
 
 export const ATOMIC_ASSET_CONTRACT_SOURCE_ID = 'h9v17KHV4SXwdW2-JHU6a23f6R0YtbXZJJht8LfP8QM';
+export const RAREWEAVE_CONTRACT_ID = 'hcszckSXA5GTg6zg65nk6RQtT4aRHDzyxOOoD6DEGxg';
 
 export const UDL_ID = 'yRj4a5KMctX_uOmKWCFJIjmY8DeJcusVk6-HzLiM_t8';
 
@@ -104,6 +105,8 @@ export const TAG_NAMES = {
   commercialUse: 'Commercial-Use',
   skipAssetCreation: 'Skip-Asset-Creation',
   sequencerTxId: 'Sequencer-Tx-Id',
+  generateAssets: 'Generate-Assets',
+  rareweaveConfig: 'Rareweave-Config',
 };
 
 export const TX_ORIGIN = 'Fair Protocol SDK';

@@ -238,7 +238,7 @@ export default abstract class FairSDK {
 
   public static prompt = async (
     content: string,
-    configuration: Configuration = { createAtomicAssets: true },
+    configuration: Configuration = { generateAssets: 'fair-protocol' },
   ) => {
     if (!this._address || !this._wallet) {
       throw new Error(walletError);

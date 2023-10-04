@@ -39,7 +39,13 @@ import { Configuration } from '../types/configuration';
 
 const RADIX = 10;
 
-const addAssetTags = (tags: ITag[], userAddr: string) => {
+export const addAtomicAssetTags = (
+  tags: ITag[],
+  userAddr: string,
+  name: string,
+  ticker: string,
+  balance = 1,
+) => {
   // add atomic asset tags
   const manifest = {
     evaluationOptions: {
@@ -54,10 +60,64 @@ const addAssetTags = (tags: ITag[], userAddr: string) => {
     firstOwner: userAddr,
     canEvolve: false,
     balances: {
-      [userAddr]: 1,
+      [userAddr]: balance,
     },
-    name: 'Fair Protocol Prompt Atomic Asset',
-    ticker: 'FPPAA',
+    name,
+    ticker,
+  };
+
+  tags.push({ name: TAG_NAMES.appName, value: 'SmartWeaveContract' });
+  tags.push({ name: TAG_NAMES.appVersion, value: '0.3.0' });
+  tags.push({ name: TAG_NAMES.contractSrc, value: ATOMIC_ASSET_CONTRACT_SOURCE_ID }); // use contract source here
+  tags.push({
+    name: TAG_NAMES.contractManifest,
+    value: JSON.stringify(manifest),
+  });
+  tags.push({
+    name: TAG_NAMES.initState,
+    value: JSON.stringify(initState),
+  });
+};
+
+export const addRareweaveTags = (
+  tags: ITag[],
+  userAddr: string,
+  name: string,
+  description: string,
+  royalty: number,
+  contentType: string,
+  balance = 1,
+) => {
+  if (royalty < 0 || royalty > 100) {
+    royalty = 0;
+  }
+
+  // add atomic asset tags
+  const manifest = {
+    evaluationOptions: {
+      sourceType: 'redstone-sequencer',
+      allowBigInt: true,
+      internalWrites: true,
+      unsafeClient: 'skip',
+      useConstructor: false,
+    },
+  };
+  const initState = {
+    owner: userAddr,
+    minter: userAddr,
+    name,
+    description,
+    ticker: 'RWNFT',
+    balances: {
+      [userAddr]: balance,
+    },
+    contentType,
+    createdAt: Date.now(),
+    evolve: null,
+    forSale: false,
+    price: 0,
+    reservationBlockHeight: 0,
+    royalty,
   };
 
   tags.push({ name: TAG_NAMES.appName, value: 'SmartWeaveContract' });
@@ -92,6 +152,17 @@ const addConfigTags = (tags: ITag[], configuration: Configuration) => {
 
   if (configuration.nImages && configuration.nImages > 0) {
     tags.push({ name: TAG_NAMES.nImages, value: configuration.nImages.toString() });
+  }
+
+  if (configuration.generateAssets && configuration.generateAssets !== 'none') {
+    tags.push({ name: TAG_NAMES.generateAssets, value: configuration.generateAssets });
+  }
+
+  if (configuration.generateAssets === 'rareweave' && configuration.rareweaveConfig) {
+    tags.push({
+      name: TAG_NAMES.rareweaveConfig,
+      value: JSON.stringify(configuration.rareweaveConfig),
+    });
   }
 };
 
@@ -210,11 +281,7 @@ export const getUploadTags = (
 
   addConfigTags(tags, configuration);
 
-  if (configuration.createAtomicAssets) {
-    addAssetTags(tags, userAddr);
-  } else {
-    tags.push({ name: TAG_NAMES.skipAssetCreation, value: 'true' });
-  }
+  addAtomicAssetTags(tags, userAddr, 'Fair Protocol Prompt Atomic Asset', 'FPPAA', 1);
 
   tags.push({ name: TAG_NAMES.license, value: UDL_ID });
   tags.push({ name: TAG_NAMES.derivation, value: 'Allowed-With-License-Passthrough' });
