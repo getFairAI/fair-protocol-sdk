@@ -57,7 +57,7 @@ export const sendU = async (to: string, amount: string | number, tags: Tags) => 
       target: to,
       qty: amount,
     },
-    { tags, strict: true },
+    { tags, strict: true, disableBundling: true },
   );
 
   return result?.originalTxId;
