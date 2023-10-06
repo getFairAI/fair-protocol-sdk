@@ -32,7 +32,6 @@ import {
   TX_ORIGIN,
   ATOMIC_ASSET_CONTRACT_SOURCE_ID,
   UDL_ID,
-  U_DIVIDER,
 } from './constants';
 import { sendU } from './warp';
 import { Configuration } from '../types/configuration';
@@ -240,7 +239,7 @@ export const handlePayment = async (
   logger.info('Payment Successful');
 
   const nDigits = 4;
-  const uCost = adjustedInferenceFee * U_DIVIDER;
+  const uCost = adjustedInferenceFee;
   const usdCost = (await getUsdCost(uCost)).toFixed(nDigits);
 
   return {
