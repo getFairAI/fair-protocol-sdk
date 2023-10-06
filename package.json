@@ -6,9 +6,11 @@
   "files": [
     "web/*",
     "node/*",
-    "common/*"
+    "common/*",
+    "cjs/*"
   ],
   "exports": {
+    "./cjs": "./cjs/index.js",
     "./node": {
       "import": "./node/index.js",
       "types": "./node/index.d.ts"
@@ -26,7 +28,7 @@
     "graphql-request": "^6.1.0",
     "pino": "^8.14.1",
     "redstone-api": "^0.4.11",
-    "warp-contracts": "^1.4.14"
+    "warp-contracts": "^1.4.5"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.4.2",
