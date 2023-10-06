@@ -53,7 +53,7 @@
   },
   "scripts": {
     "prepare": "husky install",
-    "build": "rimraf ./dist && tsc && cp -r ./dist/src/* ./dist && rimraf ./dist/src",
+    "build": "rimraf ./dist && tsc && cp -r ./dist/src/* ./dist && rimraf ./dist/src && ts-node ./build.ts",
     "prepack": "cp -r dist/* .",
     "postpack": "rimraf ./node ./web ./common",
     "lint:fix": "eslint --fix \"src/**/*.ts\"",

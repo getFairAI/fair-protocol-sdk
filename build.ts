@@ -15,7 +15,6 @@
 
 import * as esbuild from 'esbuild';
 import { nodeExternalsPlugin } from 'esbuild-node-externals';
-import { polyfillNode } from 'esbuild-plugin-polyfill-node';
 import { default as Pino } from 'pino';
 
 export const logger = Pino({
@@ -25,7 +24,7 @@ export const logger = Pino({
 
 try {
   const sharedConfig = {
-    entryPoints: [ './src/index.ts' ], // entryPoints,
+    entryPoints: [ './src/node/index.ts' ], // entryPoints,
     bundle: true,
     minify: true,
     plugins: [ nodeExternalsPlugin() ],
@@ -35,22 +34,7 @@ try {
   await esbuild.build({
     ...sharedConfig,
     platform: 'node', // for CJS
-    outfile: 'dist/index.js',
-  });
-
-  await esbuild.build({
-    ...sharedConfig,
-    outfile: 'dist/index.esm.js',
-    platform: 'neutral', // for ESM
-    format: 'esm',
-    plugins: sharedConfig.plugins.concat([
-      polyfillNode({
-        // Options (optional)
-        polyfills: {
-          fs: true,
-        }
-      }),
-	  ]),
+    outfile: 'dist/cjs/index.js',
   });
 } catch (e) {
   logger.error(e);
