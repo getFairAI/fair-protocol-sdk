@@ -37,6 +37,7 @@ const requestInference = async (
     conversationId,
     'text/plain',
     configuration,
+    'web',
   );
 
   try {

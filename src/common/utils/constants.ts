@@ -109,7 +109,8 @@ export const TAG_NAMES = {
   rareweaveConfig: 'Rareweave-Config',
 };
 
-export const TX_ORIGIN = 'Fair Protocol SDK';
+export const TX_ORIGIN_NODE = 'Fair Protocol SDK';
+export const TX_ORIGIN_WEB = 'Fair Protocol UI';
 
 // Operation Names
 export const MODEL_CREATION = 'Model Creation';

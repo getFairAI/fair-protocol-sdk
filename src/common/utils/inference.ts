@@ -29,9 +29,11 @@ import {
   SCRIPT_INFERENCE_REQUEST,
   PROTOCOL_NAME,
   PROTOCOL_VERSION,
-  TX_ORIGIN,
   ATOMIC_ASSET_CONTRACT_SOURCE_ID,
   UDL_ID,
+  RAREWEAVE_CONTRACT_ID,
+  TX_ORIGIN_NODE,
+  TX_ORIGIN_WEB,
 } from './constants';
 import { sendU } from './warp';
 import { Configuration } from '../types/configuration';
@@ -121,7 +123,7 @@ export const addRareweaveTags = (
 
   tags.push({ name: TAG_NAMES.appName, value: 'SmartWeaveContract' });
   tags.push({ name: TAG_NAMES.appVersion, value: '0.3.0' });
-  tags.push({ name: TAG_NAMES.contractSrc, value: ATOMIC_ASSET_CONTRACT_SOURCE_ID }); // use contract source here
+  tags.push({ name: TAG_NAMES.contractSrc, value: RAREWEAVE_CONTRACT_ID }); // use contract source here
   tags.push({
     name: TAG_NAMES.contractManifest,
     value: JSON.stringify(manifest),
@@ -174,6 +176,7 @@ export const handlePayment = async (
   modelCreator: string,
   operatorAddrr: string,
   configuration: Configuration,
+  origin = 'node',
 ) => {
   const parsedUFee = parseFloat(inferenceFee);
   const paymentTags = [
@@ -189,8 +192,13 @@ export const handlePayment = async (
     { name: TAG_NAMES.inferenceTransaction, value: bundlrId },
     { name: TAG_NAMES.unixTime, value: (Date.now() / secondInMS).toString() },
     { name: TAG_NAMES.contentType, value: contentType },
-    { name: TAG_NAMES.txOrigin, value: TX_ORIGIN },
   ];
+
+  if (origin === 'sdk') {
+    paymentTags.push({ name: TAG_NAMES.txOrigin, value: TX_ORIGIN_NODE });
+  } else {
+    paymentTags.push({ name: TAG_NAMES.txOrigin, value: TX_ORIGIN_WEB });
+  }
 
   addConfigTags(paymentTags, configuration);
 
@@ -259,6 +267,7 @@ export const getUploadTags = (
   conversationId: number,
   contentType: string,
   configuration: Configuration,
+  origin = 'node',
   fileName?: string,
 ) => {
   const tags = [];
@@ -276,7 +285,11 @@ export const getUploadTags = (
   const tempDate = Date.now() / secondInMS;
   tags.push({ name: TAG_NAMES.unixTime, value: tempDate.toString() });
   tags.push({ name: TAG_NAMES.contentType, value: contentType });
-  tags.push({ name: TAG_NAMES.txOrigin, value: TX_ORIGIN });
+  if (origin === 'sdk') {
+    tags.push({ name: TAG_NAMES.txOrigin, value: TX_ORIGIN_NODE });
+  } else {
+    tags.push({ name: TAG_NAMES.txOrigin, value: TX_ORIGIN_WEB });
+  }
 
   addConfigTags(tags, configuration);
 
