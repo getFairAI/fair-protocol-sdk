@@ -14,29 +14,31 @@
  */
 
 import { FairScript } from '../classes/script';
-import { DEFAULT_TAGS_RETRO, SCRIPT_CREATION_PAYMENT_TAGS, TAG_NAMES } from '../utils/constants';
-import { ITagFilter, IContractEdge, IEdge, listFilterParams } from '../types/arweave';
+import { IContractEdge, IEdge, listFilterParams } from '../types/arweave';
+import { findTag, getTxOwner, logger } from '../utils/common';
 import {
-  logger,
-  filterByUniqueScriptTxId,
-  filterPreviousVersions,
-  findTag,
-  getTxOwner,
-  isFakeDeleted,
-} from '../utils/common';
-import { findByTags } from '../utils/queries';
+  findByTags,
+  getScriptsQuery,
+  getScriptQueryForModel,
+  scriptsFilter,
+} from '../utils/queries';
 
-const commonTags: ITagFilter[] = [...DEFAULT_TAGS_RETRO, ...SCRIPT_CREATION_PAYMENT_TAGS];
-
-const _queryScripts = async (tags: ITagFilter[]) => {
+const _queryScripts = async (modelId?: string, modelName?: string, modelCreator?: string) => {
   let hasNextPage = false;
   let requestTxs: IContractEdge[] = [];
   do {
-    logger.debug(`Fetching scripts with tags: ${JSON.stringify(tags)}`);
-    const after = hasNextPage ? requestTxs[requestTxs.length - 1].cursor : undefined;
-    const first = 10;
-    const result = await findByTags(tags, first, after);
+    logger.debug('Fetching scripts');
+    let variables;
+    if (modelId) {
+      variables = getScriptQueryForModel(modelId, modelName, modelCreator).variables;
+    } else {
+      variables = getScriptsQuery().variables;
+    }
 
+    const { tags, first } = variables;
+    const after = hasNextPage ? requestTxs[requestTxs.length - 1].cursor : undefined;
+
+    const result = await findByTags(tags, first, after);
     requestTxs = requestTxs.concat(result.transactions.edges);
     hasNextPage = result.transactions.pageInfo.hasNextPage;
     if (hasNextPage) {
@@ -49,22 +51,10 @@ const _queryScripts = async (tags: ITagFilter[]) => {
   return requestTxs;
 };
 
-const _filterScripts = async (txs: IContractEdge[]) => {
-  const filtered: FairScript[] = [];
-  logger.debug('Filtering scripts...');
-  const uniqueScripts = filterByUniqueScriptTxId<IContractEdge[]>(txs);
-  const filteredScritps = filterPreviousVersions<IContractEdge[]>(uniqueScripts as IContractEdge[]);
-  for (const tx of filteredScritps) {
-    const modelTx = findTag(tx, 'scriptTransaction') as string;
-    const modelOwner = getTxOwner(tx);
-    if (await isFakeDeleted(modelTx, modelOwner, 'script')) {
-      // ignore tx
-    } else {
-      filtered.push(new FairScript(tx));
-    }
-  }
+const _filterScripts = async (requestTxs: IContractEdge[]) => {
+  const filtered = await scriptsFilter(requestTxs);
 
-  return filtered;
+  return filtered.map((scriptTx) => new FairScript(scriptTx));
 };
 
 /**
@@ -73,19 +63,13 @@ const _filterScripts = async (txs: IContractEdge[]) => {
  * @returns { FairScript[]} List of FairScript objects
  */
 const _listAllScripts = async () => {
-  const requestTxs = await _queryScripts(commonTags);
+  const requestTxs = await _queryScripts();
 
   return _filterScripts(requestTxs);
 };
 
 const _listScriptsWithModelId = async (modelId: string) => {
-  const tags = [
-    ...DEFAULT_TAGS_RETRO,
-    ...(modelId ? [{ name: TAG_NAMES.modelTransaction, values: [modelId] }] : []),
-    ...SCRIPT_CREATION_PAYMENT_TAGS,
-  ];
-
-  const requestTxs = await _queryScripts(tags);
+  const requestTxs = await _queryScripts(modelId);
 
   return _filterScripts(requestTxs);
 };
@@ -93,24 +77,19 @@ const _listScriptsWithModelId = async (modelId: string) => {
 const _listScriptsWithModelTx = async (modelTx: IContractEdge | IEdge) => {
   const operationName = findTag(modelTx, 'operationName') as string;
 
-  const tags = [
-    ...commonTags,
-    { name: TAG_NAMES.modelName, values: [findTag(modelTx, 'modelName') as string] },
-    { name: TAG_NAMES.modelCreator, values: [getTxOwner(modelTx)] },
-  ];
+  const modelName = findTag(modelTx, 'modelName') as string;
+  const modelCreator = getTxOwner(modelTx);
+  let modelId = null;
 
   if (operationName === 'Model Creation Payment') {
-    tags.push({
-      name: TAG_NAMES.modelTransaction,
-      values: [findTag(modelTx, 'modelTransaction') as string],
-    });
+    modelId = findTag(modelTx, 'modelTransaction') as string;
   } else if (operationName === 'Model Creation') {
-    tags.push({ name: TAG_NAMES.modelTransaction, values: [modelTx.node.id] });
+    modelId = modelTx.node.id;
   } else {
     throw new Error('Invalid Model transaction');
   }
 
-  const requestTxs = await _queryScripts(tags);
+  const requestTxs = await _queryScripts(modelId, modelName, modelCreator);
 
   return _filterScripts(requestTxs);
 };

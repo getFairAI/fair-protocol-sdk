@@ -36,7 +36,13 @@ import { listModels } from '../common/queries/model';
 import { listOperators } from '../common/queries/operator';
 import { listScripts } from '../common/queries/script';
 import { IEdge, IContractEdge, logLevels } from '../common/types/arweave';
-import { getAllResponses, getRequests, getResponses } from '../common/queries/inference';
+import { Configuration } from '../common/types/configuration';
+import { getRequests, getResponses } from '../common/queries/inference';
+import * as queryUtils from './../common/utils/queries';
+import * as inferenceUtils from './../common/utils/inference';
+import * as commonUtils from './../common/utils/common';
+import * as warpUtils from './../common/utils/warp';
+import * as constants from './../common/utils/constants';
 
 const walletError = 'Wallet not set';
 
@@ -76,14 +82,53 @@ export default abstract class FairSDK {
     }
   }
 
-  public static get queries() {
+  public static get query() {
     return {
       listModels,
       listScripts,
       listOperators,
-      getResponses: (requestIds: string[]) => getResponses(this._address, requestIds),
-      getAllResponses: (limit: number) => getAllResponses(this._address, limit),
-      getRequests: (limit: number) => getRequests(this._address, limit),
+      getResponses: (
+        requestIds: string[],
+        scriptName?: string,
+        scriptCurator?: string,
+        scriptOperators?: string[],
+        conversationIdentifier?: number,
+        first?: number | 'all',
+      ) =>
+        getResponses(
+          requestIds,
+          this._address,
+          scriptName,
+          scriptCurator,
+          scriptOperators,
+          conversationIdentifier,
+          first,
+        ),
+      getRequests: (
+        scriptName?: string | undefined,
+        scriptCurator?: string | undefined,
+        scriptOperator?: string | undefined,
+        conversationIdentifier?: number | undefined,
+        first?: number | 'all',
+      ) =>
+        getRequests(
+          this._address,
+          scriptName,
+          scriptCurator,
+          scriptOperator,
+          conversationIdentifier,
+          first,
+        ),
+    };
+  }
+
+  public static get utils() {
+    return {
+      ...queryUtils,
+      ...constants,
+      ...commonUtils,
+      ...inferenceUtils,
+      ...warpUtils,
     };
   }
 
@@ -191,7 +236,10 @@ export default abstract class FairSDK {
     return getUBalance(this._address);
   };
 
-  public static prompt = async (content: string) => {
+  public static prompt = async (
+    content: string,
+    configuration: Configuration = { generateAssets: 'fair-protocol' },
+  ) => {
     if (!this._address || !this._wallet) {
       throw new Error(walletError);
     }
@@ -219,6 +267,7 @@ export default abstract class FairSDK {
         content,
         this._address,
         this._bundlr,
+        configuration,
       );
       logger.info(`Inference result: ${JSON.stringify(result)}`);
     }

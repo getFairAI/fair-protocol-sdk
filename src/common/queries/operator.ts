@@ -14,19 +14,27 @@
  */
 
 import { FairOperator } from '../classes/operator';
-import { DEFAULT_TAGS, OPERATOR_REGISTRATION_PAYMENT_TAGS, TAG_NAMES } from '../utils/constants';
-import { IContractEdge, IEdge, ITagFilter, listFilterParams } from '../types/arweave';
-import { findByTags } from '../utils/queries';
-import { findTag, getTxOwner, isValidRegistration, logger } from '../utils/common';
+import { IContractEdge, IEdge, listFilterParams } from '../types/arweave';
+import {
+  findByTags,
+  getOperatorsQuery,
+  getOperatorQueryForScript,
+  operatorsFilter,
+} from '../utils/queries';
+import { findTag, getTxOwner, logger } from '../utils/common';
 
-const commonTags = [...DEFAULT_TAGS, ...OPERATOR_REGISTRATION_PAYMENT_TAGS];
-
-const _queryOperators = async (tags: ITagFilter[]) => {
+const _queryOperators = async (scriptId?: string, scriptName?: string, scriptCurator?: string) => {
   let hasNextPage = false;
   let requestTxs: IContractEdge[] = [];
   do {
-    logger.debug(`Fetching operators with tags: ${JSON.stringify(tags)}`);
-    const first = 10;
+    logger.debug('Fetching operators');
+    let variables;
+    if (scriptId) {
+      variables = getOperatorQueryForScript(scriptId, scriptName, scriptCurator).variables;
+    } else {
+      variables = getOperatorsQuery().variables;
+    }
+    const { tags, first } = variables;
     const after = hasNextPage ? requestTxs[requestTxs.length - 1].cursor : undefined;
 
     const result = await findByTags(tags, first, after);
@@ -46,29 +54,12 @@ const _queryOperators = async (tags: ITagFilter[]) => {
 const _filterOperators = async (txs: IContractEdge[]) => {
   logger.debug('Filtering Operators...');
 
-  const filtered: FairOperator[] = [];
-  for (const tx of txs) {
-    const opFee = findTag(tx, 'operatorFee') as string;
-    const scriptName = findTag(tx, 'scriptName') as string;
-    const scriptCurator = findTag(tx, 'scriptCurator') as string;
-    const registrationOwner = (findTag(tx, 'sequencerOwner') as string) ?? tx.node.owner.address;
-
-    if (
-      await isValidRegistration(tx.node.id, opFee, registrationOwner, scriptName, scriptCurator)
-    ) {
-      filtered.push(new FairOperator(tx));
-    }
-  }
-
-  return filtered;
+  const filtered = await operatorsFilter(txs);
+  return filtered.map((operatorTx) => new FairOperator(operatorTx));
 };
 
 const _listOperatorsWithScriptId = async (scriptId?: string) => {
-  const tags = [
-    ...commonTags,
-    ...(scriptId ? [{ name: TAG_NAMES.scriptTransaction, values: [scriptId] }] : []),
-  ];
-  const requestTxs = await _queryOperators(tags);
+  const requestTxs = await _queryOperators(scriptId);
 
   return _filterOperators(requestTxs);
 };
@@ -76,30 +67,25 @@ const _listOperatorsWithScriptId = async (scriptId?: string) => {
 const _listOperatorsWithScriptTx = async (scriptTx: IContractEdge | IEdge) => {
   const operationName = findTag(scriptTx, 'operationName') as string;
 
-  const tags = [
-    ...commonTags,
-    { name: TAG_NAMES.scriptName, values: [findTag(scriptTx, 'scriptName') as string] },
-    { name: TAG_NAMES.scriptCurator, values: [getTxOwner(scriptTx)] },
-  ];
+  const scriptName = findTag(scriptTx, 'scriptName') as string;
+  const scriptCurator = getTxOwner(scriptTx);
+  let scriptId;
 
   if (operationName === 'Script Creation Payment') {
-    tags.push({
-      name: TAG_NAMES.scriptTransaction,
-      values: [findTag(scriptTx, 'scriptTransaction') as string],
-    });
+    scriptId = findTag(scriptTx, 'scriptTransaction') as string;
   } else if (operationName === 'Script Creation') {
-    tags.push({ name: TAG_NAMES.scriptTransaction, values: [scriptTx.node.id] });
+    scriptId = scriptTx.node.id;
   } else {
     throw new Error('Invalid script transaction');
   }
 
-  const requestTxs = await _queryOperators(tags);
+  const requestTxs = await _queryOperators(scriptId, scriptName, scriptCurator);
 
   return _filterOperators(requestTxs);
 };
 
 const _listAllOperators = async () => {
-  const requestTxs = await _queryOperators(commonTags);
+  const requestTxs = await _queryOperators();
 
   return _filterOperators(requestTxs);
 };

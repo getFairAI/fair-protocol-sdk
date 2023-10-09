@@ -21,23 +21,33 @@ export const U_DIVIDER = 1e6;
 export const VOUCH_CONTRACT_ID = '_z0ch80z_daDUFqC9jHjfOL8nekJcok4ZRkE_UesYsk';
 export const U_LOGO_SRC = 'https://arweave.net/J3WXX4OGa6wP5E9oLhNyqlN4deYI7ARjrd5se740ftE';
 
-export const APP_NAME = 'Fair Protocol';
-export const PREVIOUS_VERSIONS = ['0.1'];
-export const APP_VERSION = '0.3';
+export const UCM_CONTRACT_ID = 'tfalT8Z-88riNtoXdF5ldaBtmsfcSmbMqWLh2DHJIbg';
+export const UCM_DIVIDER = 1e6;
+
+export const ATOMIC_ASSET_CONTRACT_SOURCE_ID = 'h9v17KHV4SXwdW2-JHU6a23f6R0YtbXZJJht8LfP8QM';
+export const RAREWEAVE_CONTRACT_ID = 'hcszckSXA5GTg6zg65nk6RQtT4aRHDzyxOOoD6DEGxg';
+
+export const UDL_ID = 'yRj4a5KMctX_uOmKWCFJIjmY8DeJcusVk6-HzLiM_t8';
+
+export const PROTOCOL_NAME = 'Fair Protocol';
+export const PREVIOUS_VERSIONS = ['0.1', '0.3'];
+export const PROTOCOL_VERSION = '1.0';
 
 export const MARKETPLACE_FEE = '0.5'; // u
 export const SCRIPT_CREATION_FEE = '0.5'; // u
 export const OPERATOR_REGISTRATION_AR_FEE = '0.05'; // u
 
-export const OPERATOR_PERCENTAGE_FEE = 0.8;
-export const MARKETPLACE_PERCENTAGE_FEE = 0.15;
-export const CURATOR_PERCENTAGE_FEE = 0.025;
-export const CREATOR_PERCENTAGE_FEE = 0.025;
+export const OPERATOR_PERCENTAGE_FEE = 0.7;
+export const MARKETPLACE_PERCENTAGE_FEE = 0.1;
+export const CURATOR_PERCENTAGE_FEE = 0.05;
+export const CREATOR_PERCENTAGE_FEE = 0.15;
 
 // Choose the latest script and operator
 export const IS_TO_CHOOSE_MODEL_AUTOMATICALLY = true;
 
 export const TAG_NAMES = {
+  protocolName: 'Protocol-Name',
+  protocolVersion: 'Protocol-Version',
   appName: 'App-Name',
   appVersion: 'App-Version',
   contentType: 'Content-Type',
@@ -81,7 +91,26 @@ export const TAG_NAMES = {
   updateFor: 'Update-For',
   previousVersions: 'Previous-Versions',
   txOrigin: 'Transaction-Origin',
+  assetNames: 'Asset-Names',
+  negativePrompt: 'Negative-Prompt',
+  userCustomTags: 'User-Custom-Tags',
+  nImages: 'N-Images',
+  output: 'Output',
+  outputConfiguration: 'Output-Configuration',
+  contractSrc: 'Contract-Src',
+  contractManifest: 'Contract-Manifest',
+  initState: 'Init-State',
+  license: 'License',
+  derivation: 'Derivation',
+  commercialUse: 'Commercial-Use',
+  skipAssetCreation: 'Skip-Asset-Creation',
+  sequencerTxId: 'Sequencer-Tx-Id',
+  generateAssets: 'Generate-Assets',
+  rareweaveConfig: 'Rareweave-Config',
 };
+
+export const TX_ORIGIN_NODE = 'Fair Protocol SDK';
+export const TX_ORIGIN_WEB = 'Fair Protocol UI';
 
 // Operation Names
 export const MODEL_CREATION = 'Model Creation';
@@ -151,40 +180,16 @@ export const N_PREVIOUS_BLOCKS = 7;
 export const MIN_CONFIRMATIONS = 7;
 
 export const DEFAULT_TAGS = [
-  { name: TAG_NAMES.appName, values: [APP_NAME] },
-  { name: TAG_NAMES.appVersion, values: [APP_VERSION] },
+  { name: TAG_NAMES.protocolName, values: [PROTOCOL_NAME] },
+  { name: TAG_NAMES.protocolVersion, values: [PROTOCOL_VERSION] },
 ];
 
 // add smartWeaveContract tags so atomic tokens can be picked up
-export const DEFAULT_TAGS_FOR_TOKENS = [
-  { name: TAG_NAMES.appName, values: [APP_NAME, 'SmartWeaveContract'] },
-  { name: TAG_NAMES.appVersion, values: [APP_VERSION, '0.3.0'] },
+export const DEFAULT_TAGS_FOR_ASSETS = [
+  ...DEFAULT_TAGS,
+  { name: TAG_NAMES.appName, values: ['SmartWeaveContract'] },
+  { name: TAG_NAMES.appVersion, values: ['0.3.0'] },
 ];
-
-// export default tags with support for old version txs
-export const DEFAULT_TAGS_RETRO = [
-  { name: TAG_NAMES.appName, values: [APP_NAME] },
-  { name: TAG_NAMES.appVersion, values: [...PREVIOUS_VERSIONS, APP_VERSION] },
-];
-
-export const GITHUB_LINK = 'https://github.com/FAIR-Protocol/decentralized-inference';
-export const DISCORD_LINK = 'https://discord.gg/GRf7CukfXf';
-export const WHITEPAPER_LINK =
-  'https://lqcpjipmt2d2daazjknargowboxuhn3wgealzbqdsjmwxbgli52q.arweave.net/XAT0oeyeh6GAGUqaCJnWC69Dt3YxALyGA5JZa4TLR3U';
-export const TWITTER_LINK = 'https://twitter.com/fairAIprotocol';
-export const STUDIO_LINK = 'https://fairstudio.arweave.dev/';
-
-export const operatorHeaders = [
-  'Address',
-  'Name',
-  'Registration',
-  'Fee ($U)',
-  'Status',
-  'Stamps',
-  'Selected',
-];
-
-export const scriptHeaders = ['Creator', 'Name', 'Registration', 'Stamps', 'Selected'];
 
 export const secondInMS = 1000;
 export const defaultDecimalPlaces = 4;

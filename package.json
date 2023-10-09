@@ -1,14 +1,16 @@
 {
   "name": "fair-protocol-sdk",
-  "version": "1.0.1",
+  "version": "2.0",
   "description": "",
   "type": "module",
   "files": [
     "web/*",
     "node/*",
-    "common/*"
+    "common/*",
+    "cjs/*"
   ],
   "exports": {
+    "./cjs": "./cjs/index.js",
     "./node": {
       "import": "./node/index.js",
       "types": "./node/index.d.ts"
@@ -25,7 +27,8 @@
     "graphql": "^16.7.1",
     "graphql-request": "^6.1.0",
     "pino": "^8.14.1",
-    "warp-contracts": "^1.4.14"
+    "redstone-api": "^0.4.11",
+    "warp-contracts": "^1.4.5"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.4.2",
@@ -50,7 +53,7 @@
   },
   "scripts": {
     "prepare": "husky install",
-    "build": "rimraf ./dist && tsc && cp -r ./dist/src/* ./dist && rimraf ./dist/src",
+    "build": "rimraf ./dist && tsc && cp -r ./dist/src/* ./dist && rimraf ./dist/src && ts-node ./build.ts",
     "prepack": "cp -r dist/* .",
     "postpack": "rimraf ./node ./web ./common",
     "lint:fix": "eslint --fix \"src/**/*.ts\"",

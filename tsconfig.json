@@ -100,7 +100,7 @@
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true,                                /* Skip type checking all .d.ts files. */
     "useDefineForClassFields": true,
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "allowJs": false,
     "allowSyntheticDefaultImports": true,
     "isolatedModules": true,

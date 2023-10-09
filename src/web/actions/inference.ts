@@ -14,24 +14,31 @@
  */
 
 import { logger } from '../../common/utils/common';
-import { FairModel } from '../../common/classes/model';
 import { FairOperator } from '../../common/classes/operator';
 import { FairScript } from '../../common/classes/script';
-import { getLastConversationId } from '../../common/queries/inference';
-import { getUploadTags, handlePayment } from '../../common/utils/inference';
+import { getUploadTags } from '../../common/utils/inference';
 import { createTx } from '../utils/arweave';
 import type Arweave from 'arweave/web';
+import { Configuration } from '../../common/types/configuration';
 
-const inference = async (
+const requestInference = async (
   arweave: Arweave,
-  model: FairModel,
   script: FairScript,
   operator: FairOperator,
   prompt: string,
   userAddr: string,
+  conversationId: number,
+  configuration: Configuration,
 ) => {
-  const conversationId = await getLastConversationId(userAddr, script);
-  const tags = getUploadTags(script, operator.owner, conversationId);
+  const tags = getUploadTags(
+    script,
+    operator.owner,
+    userAddr,
+    conversationId,
+    'text/plain',
+    configuration,
+    'web',
+  );
 
   try {
     const tx = await createTx(arweave, prompt, tags);
@@ -41,18 +48,10 @@ const inference = async (
     }
     logger.debug(`Inference txid: ${result.id}`);
 
-    return handlePayment(
-      result.id,
-      operator.fee,
-      'text/plain',
-      script,
-      conversationId,
-      model.owner,
-      operator.owner,
-    );
+    return result.id;
   } catch (error) {
     throw new Error(JSON.stringify(error));
   }
 };
 
-export { inference };
+export { requestInference };

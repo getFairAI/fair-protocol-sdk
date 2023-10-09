@@ -18,8 +18,9 @@ import { logger } from '../../common/utils/common';
 import { FairModel } from '../../common/classes/model';
 import { FairOperator } from '../../common/classes/operator';
 import { FairScript } from '../../common/classes/script';
-import { getLastConversationId } from '../../common/queries/inference';
 import { getUploadTags, handlePayment } from '../../common/utils/inference';
+import { Configuration } from '../../common/types/configuration';
+import { getLastConversationId } from '../../common/utils/queries';
 
 const inference = async (
   model: FairModel,
@@ -28,9 +29,17 @@ const inference = async (
   prompt: string,
   userAddr: string,
   bundlr: NodeBundlr,
+  configuration: Configuration,
 ) => {
   const conversationId = await getLastConversationId(userAddr, script);
-  const tags = getUploadTags(script, operator.owner, conversationId);
+  const tags = getUploadTags(
+    script,
+    operator.owner,
+    userAddr,
+    conversationId,
+    'text/plain',
+    configuration,
+  );
   try {
     const { id: txid } = await bundlr.upload(prompt, { tags });
     if (!txid) {
@@ -46,6 +55,7 @@ const inference = async (
       conversationId,
       model.owner,
       operator.owner,
+      configuration,
     );
   } catch (error) {
     throw new Error(JSON.stringify(error));

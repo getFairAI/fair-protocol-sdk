@@ -16,11 +16,13 @@
 import { WarpFactory, JWKInterface, Tags } from 'warp-contracts';
 import { U_CONTRACT_ID, U_DIVIDER } from './constants';
 import { UState } from '../types/u';
+import { logger } from './common';
 
 const warp = WarpFactory.forMainnet();
+const dreUrl = 'https://dre-u.warp.cc';
 
 const contract = warp.contract(U_CONTRACT_ID).setEvaluationOptions({
-  remoteStateSyncSource: 'https://dre-u.warp.cc/contract',
+  remoteStateSyncSource: `${dreUrl}/contract`,
   remoteStateSyncEnabled: true,
   unsafeClient: 'skip',
   allowBigInt: true,
@@ -59,4 +61,22 @@ export const sendU = async (to: string, amount: string | number, tags: Tags) => 
   );
 
   return result?.originalTxId;
+};
+
+export const isUTxValid = async (sequencerTxID?: string) => {
+  if (!sequencerTxID) {
+    logger.error('Invalid Sequencer Tx Id');
+    return false;
+  }
+
+  try {
+    const url = `${dreUrl}/validity?id=${sequencerTxID}&contractId=${U_CONTRACT_ID}`;
+    const result = await fetch(url);
+    const parsedResult: { validity: boolean } = await result.json();
+
+    return parsedResult.validity;
+  } catch (error) {
+    logger.error(`Error validating U tx: ${error}`);
+    return false;
+  }
 };

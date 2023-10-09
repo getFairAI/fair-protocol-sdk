@@ -16,7 +16,7 @@
 import { describe, expect, test, jest } from '@jest/globals';
 import { TAG_NAMES } from '../../../common/utils/constants';
 import { listModels } from '../../../common/queries/model';
-import { findByTags } from '../../../common/utils/queries';
+import { findByTags, getModelsQuery, modelsFilter } from '../../../common/utils/queries';
 
 const models = [
   {
@@ -43,8 +43,17 @@ const models = [
   },
 ];
 
-jest.mock('../queries', () => {
+jest.mock('../../../common/utils/queries', () => {
   return {
+    getModelsQuery: jest.fn().mockImplementation(() => ({
+      variables: {
+        tags: [],
+        first: 10,
+      },
+    })) as jest.MockedFunction<typeof getModelsQuery>,
+    modelsFilter: jest.fn().mockImplementation((txs) => txs) as jest.MockedFunction<
+      typeof modelsFilter
+    >,
     findByTags: jest.fn().mockImplementation(() => {
       return {
         transactions: {

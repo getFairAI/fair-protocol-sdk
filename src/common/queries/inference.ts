@@ -13,127 +13,104 @@
  * limitations under the License.
  */
 
-import { IContractEdge, IEdge } from '../types/arweave';
-import { findTag, getTxOwner } from '../utils/common';
-import {
-  DEFAULT_TAGS_FOR_TOKENS,
-  TAG_NAMES,
-  SCRIPT_INFERENCE_RESPONSE,
-  APP_NAME,
-  APP_VERSION,
-  SCRIPT_INFERENCE_REQUEST,
-  DEFAULT_TAGS,
-  CONVERSATION_START,
-} from '../utils/constants';
-import {
-  getTxOwners,
-  getTxWithOwners,
-  findByTags,
-  getByIds,
-  getTxsWithOwners,
-} from '../utils/queries';
-import { FairScript } from './script';
+import { IEdge, IQueryResult } from '../types/arweave';
+import { runQuery, getRequestsQuery, getResponsesQuery } from '../utils/queries';
 
-const DEFAULT_LIMIT = 10;
+export const getResponses = async (
+  requestIds: string[],
+  userAddress?: string,
+  scriptName?: string,
+  scriptCurator?: string,
+  scriptOperators?: string[],
+  currenctConversationId?: number,
+  first?: number | 'all',
+) => {
+  if (first === 'all') {
+    let hasNextPage = false;
+    let lastPaginationCursor = null;
+    const txs: IEdge[] = [];
+    do {
+      const { query, variables } = getResponsesQuery(
+        requestIds,
+        userAddress,
+        scriptName,
+        scriptCurator,
+        scriptOperators,
+        currenctConversationId,
+      );
 
-export const getResponses = async (userAddr: string, requestIds: string[]) => {
-  const owners = await getTxOwners(requestIds);
+      if (lastPaginationCursor) {
+        variables.after = lastPaginationCursor;
+      }
 
-  const tagsResponses = [
-    ...DEFAULT_TAGS_FOR_TOKENS,
-    /* { name: TAG_NAMES.scriptName, values: [state.scriptName] },
-    { name: TAG_NAMES.scriptCurator, values: [state.scriptCurator] }, */
-    { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_RESPONSE] },
-    // { name: 'Conversation-Identifier', values: [currentConversationId] },
-    { name: TAG_NAMES.scriptUser, values: [userAddr] },
-    {
-      name: TAG_NAMES.requestTransaction,
-      values: requestIds,
-    },
-  ];
+      const data: IQueryResult = await runQuery(query, variables);
 
-  return getTxWithOwners(tagsResponses, owners);
-};
+      hasNextPage = data.transactions.pageInfo.hasNextPage;
+      lastPaginationCursor = data.transactions.edges[data.transactions.edges.length - 1].cursor;
+      txs.push(...data.transactions.edges);
+    } while (hasNextPage);
 
-export const getAllResponses = async (userAddr: string, limit = DEFAULT_LIMIT) => {
-  const tagsResponses = [
-    ...DEFAULT_TAGS_FOR_TOKENS,
-    /* { name: TAG_NAMES.scriptName, values: [state.scriptName] },
-    { name: TAG_NAMES.scriptCurator, values: [state.scriptCurator] }, */
-    { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_RESPONSE] },
-    // { name: 'Conversation-Identifier', values: [currentConversationId] },
-    { name: TAG_NAMES.scriptUser, values: [userAddr] },
-  ];
-
-  const responsesPerRequest = 4;
-  const data = await findByTags(tagsResponses, limit * responsesPerRequest);
-
-  // get the txs requestIds
-  const requestIds = Array.from(
-    new Set(
-      data.transactions.edges.map((el: IContractEdge) =>
-        findTag(el, 'requestTransaction'),
-      ) as string[],
-    ),
-  );
-  // get the txs
-  const requests = await getByIds(requestIds);
-
-  const filtered = [];
-  // filter responses that
-  for (const res of data.transactions.edges) {
-    // find request
-    const request = requests.find(
-      (el: IEdge) => el.node.id === findTag(res, 'requestTransaction'),
-    ) as IEdge;
-    if (getTxOwner(res) === findTag(request, 'scriptOperator')) {
-      // remove response
-      filtered.push(res);
-    } else {
-      // ignore response
-    }
-  }
-
-  return filtered;
-};
-
-export const getRequests = async (userAddr: string, limit = DEFAULT_LIMIT) => {
-  const tags = [
-    { name: TAG_NAMES.appName, values: [APP_NAME] },
-    { name: TAG_NAMES.appVersion, values: [APP_VERSION] },
-    { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_REQUEST] },
-  ];
-
-  return getTxsWithOwners(tags, [userAddr], limit);
-};
-
-export const getLastConversationId = async (userAddr: string, script: FairScript) => {
-  const tags = [
-    ...DEFAULT_TAGS,
-    {
-      name: TAG_NAMES.operationName,
-      values: [CONVERSATION_START],
-    },
-    {
-      name: TAG_NAMES.scriptTransaction,
-      values: [script.txid],
-    },
-    { name: TAG_NAMES.scriptName, values: [script.name] },
-    { name: TAG_NAMES.scriptCurator, values: [script.owner] },
-  ];
-  const owners = [userAddr];
-
-  const data = await getTxWithOwners(tags, owners);
-
-  if (data?.length > 0) {
-    const tx = data[0];
-    const conversationId = findTag(tx, 'conversationIdentifier');
-    if (conversationId) {
-      return parseInt(conversationId, DEFAULT_LIMIT);
-    } else {
-      return 1;
-    }
+    return txs;
   } else {
-    return 1;
+    const { query, variables } = getResponsesQuery(
+      requestIds,
+      userAddress,
+      scriptName,
+      scriptCurator,
+      scriptOperators,
+      currenctConversationId,
+      first,
+    );
+    const results = await runQuery(query, variables);
+
+    return results.transactions.edges;
+  }
+};
+
+export const getRequests = async (
+  userAddr: string,
+  scriptName?: string,
+  scriptCurator?: string,
+  scriptOperator?: string,
+  currenctConversationId?: number,
+  first?: number | 'all',
+) => {
+  if (first === 'all') {
+    let hasNextPage = false;
+    let lastPaginationCursor = null;
+    const txs: IEdge[] = [];
+    do {
+      const { query, variables } = getRequestsQuery(
+        userAddr,
+        scriptName,
+        scriptCurator,
+        scriptOperator,
+        currenctConversationId,
+      );
+
+      if (lastPaginationCursor) {
+        variables.after = lastPaginationCursor;
+      }
+
+      const data: IQueryResult = await runQuery(query, variables);
+
+      hasNextPage = data.transactions.pageInfo.hasNextPage;
+      lastPaginationCursor = data.transactions.edges[data.transactions.edges.length - 1].cursor;
+      txs.push(...data.transactions.edges);
+    } while (hasNextPage);
+
+    return txs;
+  } else {
+    const { query, variables } = getRequestsQuery(
+      userAddr,
+      scriptName,
+      scriptCurator,
+      scriptOperator,
+      currenctConversationId,
+      first,
+    );
+    const results = await runQuery(query, variables);
+
+    return results.transactions.edges;
   }
 };
