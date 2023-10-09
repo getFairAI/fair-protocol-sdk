@@ -24,8 +24,7 @@ const listModels = async () => {
   do {
     logger.debug('Fetching models');
     const variables = getModelsQuery().variables;
-    const tags = variables.tags;
-    const first = variables.first;
+    const { tags, first } = variables;
     const after = hasNextPage ? requestTxs[requestTxs.length - 1].cursor : undefined;
 
     const result = await findByTags(tags, first, after);

@@ -261,7 +261,7 @@ export const getTxsWithOwners = async (tags: ITagFilter[], owners: string[], fir
     });
 
     for (const tx of data.transactions.edges) {
-      const owner = findTag(tx, 'sequencerOwner') || tx.node.owner.address;
+      const owner = findTag(tx, 'sequencerOwner') ?? tx.node.owner.address;
 
       if (owners.includes(owner)) {
         txs.push(tx);
@@ -370,7 +370,7 @@ const checkLastRequests = async (
   operatorFee: string,
   scriptName: string,
   scriptCurator: string,
-  isStableDiffusion?: boolean,
+  isStableDiffusion = false,
 ) => {
   const { query, variables } = getRequestsQuery(
     undefined,
@@ -484,7 +484,7 @@ const isValidRegistration = async (
   opAddress: string,
   scriptName: string,
   scriptCurator: string,
-  isStableDiffusion?: boolean,
+  isStableDiffusion = false,
 ) => {
   const isCancelledTx = await isCancelled(txid, opAddress);
   if (isCancelledTx) {
@@ -523,8 +523,6 @@ const checkHasOperators = async (
     let hasAtLeastOneValid = false;
     for (const registration of queryResult.transactions.edges) {
       const opFee = findTag(registration, 'operatorFee') as string;
-      const scriptName = findTag(registration, 'scriptName') as string;
-      const scriptCurator = findTag(registration, 'scriptCurator') as string;
       const registrationOwner =
         (findTag(registration, 'sequencerOwner') as string) ?? registration.node.owner.address;
 

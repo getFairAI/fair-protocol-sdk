@@ -27,7 +27,7 @@ export const getResponses = async (
 ) => {
   if (first === 'all') {
     let hasNextPage = false;
-    let lastPaginationCursor = undefined;
+    let lastPaginationCursor = null;
     const txs: IEdge[] = [];
     do {
       const { query, variables } = getResponsesQuery(
@@ -38,7 +38,11 @@ export const getResponses = async (
         scriptOperators,
         currenctConversationId,
       );
-      variables.after = lastPaginationCursor;
+
+      if (lastPaginationCursor) {
+        variables.after = lastPaginationCursor;
+      }
+
       const data: IQueryResult = await runQuery(query, variables);
 
       hasNextPage = data.transactions.pageInfo.hasNextPage;
@@ -73,7 +77,7 @@ export const getRequests = async (
 ) => {
   if (first === 'all') {
     let hasNextPage = false;
-    let lastPaginationCursor = undefined;
+    let lastPaginationCursor = null;
     const txs: IEdge[] = [];
     do {
       const { query, variables } = getRequestsQuery(
@@ -83,7 +87,11 @@ export const getRequests = async (
         scriptOperator,
         currenctConversationId,
       );
-      variables.after = lastPaginationCursor;
+
+      if (lastPaginationCursor) {
+        variables.after = lastPaginationCursor;
+      }
+
       const data: IQueryResult = await runQuery(query, variables);
 
       hasNextPage = data.transactions.pageInfo.hasNextPage;

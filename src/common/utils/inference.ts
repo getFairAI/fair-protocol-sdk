@@ -38,6 +38,7 @@ import {
 import { sendU } from './warp';
 import { Configuration } from '../types/configuration';
 
+const MAX_ROYALTY = 100;
 const RADIX = 10;
 
 export const addAtomicAssetTags = (
@@ -89,7 +90,7 @@ export const addRareweaveTags = (
   contentType: string,
   balance = 1,
 ) => {
-  if (royalty < 0 || royalty > 100) {
+  if (royalty < 0 || royalty > MAX_ROYALTY) {
     royalty = 0;
   }
 
@@ -106,18 +107,18 @@ export const addRareweaveTags = (
   const initState = {
     owner: userAddr,
     minter: userAddr,
-    name,
-    description,
     ticker: 'RWNFT',
     balances: {
       [userAddr]: balance,
     },
-    contentType,
     createdAt: Date.now(),
     evolve: null,
     forSale: false,
     price: 0,
     reservationBlockHeight: 0,
+    name,
+    description,
+    contentType,
     royalty,
   };
 

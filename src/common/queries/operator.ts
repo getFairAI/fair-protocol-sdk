@@ -34,8 +34,7 @@ const _queryOperators = async (scriptId?: string, scriptName?: string, scriptCur
     } else {
       variables = getOperatorsQuery().variables;
     }
-    const tags = variables.tags;
-    const first = variables.first;
+    const { tags, first } = variables;
     const after = hasNextPage ? requestTxs[requestTxs.length - 1].cursor : undefined;
 
     const result = await findByTags(tags, first, after);
