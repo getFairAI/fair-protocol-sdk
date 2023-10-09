@@ -34,6 +34,7 @@ import {
   RAREWEAVE_CONTRACT_ID,
   TX_ORIGIN_NODE,
   TX_ORIGIN_WEB,
+  U_DIVIDER,
 } from './constants';
 import { sendU } from './warp';
 import { Configuration } from '../types/configuration';
@@ -248,7 +249,7 @@ export const handlePayment = async (
   logger.info('Payment Successful');
 
   const nDigits = 4;
-  const uCost = adjustedInferenceFee;
+  const uCost = adjustedInferenceFee / U_DIVIDER;
   const usdCost = (await getUsdCost(uCost)).toFixed(nDigits);
 
   return {
@@ -271,7 +272,7 @@ export const getUploadTags = (
   origin = 'node',
   fileName?: string,
 ) => {
-  const tags = [];
+  const tags: { name: string; value: string }[] = [];
   tags.push({ name: TAG_NAMES.protocolName, value: PROTOCOL_NAME });
   tags.push({ name: TAG_NAMES.protocolVersion, value: PROTOCOL_VERSION });
   tags.push({ name: TAG_NAMES.scriptName, value: script.name });
