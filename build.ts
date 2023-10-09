@@ -34,7 +34,7 @@ try {
   await esbuild.build({
     ...sharedConfig,
     platform: 'node', // for CJS
-    outfile: 'dist/cjs/index.js',
+    outfile: 'dist/cjs/index.cjs',
   });
 } catch (e) {
   logger.error(e);
