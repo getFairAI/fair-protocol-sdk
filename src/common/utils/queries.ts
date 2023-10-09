@@ -244,7 +244,7 @@ export const getTxOwners = async (txids: string[]) => {
 export const getTxsWithOwners = async (tags: ITagFilter[], owners: string[], first: number) => {
   const txs: IEdge[] = [];
   let hasNextPage = false;
-  let lastPaginationCursor = null;
+  let lastPaginationCursor;
 
   if (first <= 0) {
     // if first is 0 or negative, fetch everything
