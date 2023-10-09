@@ -10,7 +10,7 @@
     "cjs/*"
   ],
   "exports": {
-    "./cjs": "./cjs/index.js",
+    "./cjs": "./cjs/index.cjs",
     "./node": {
       "import": "./node/index.js",
       "types": "./node/index.d.ts"
