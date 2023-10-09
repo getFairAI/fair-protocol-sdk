@@ -27,7 +27,7 @@ export const getResponses = async (
 ) => {
   if (first === 'all') {
     let hasNextPage = false;
-    let lastPaginationCursor = null;
+    let lastPaginationCursor;
     const txs: IEdge[] = [];
     do {
       const { query, variables } = getResponsesQuery(
@@ -77,7 +77,7 @@ export const getRequests = async (
 ) => {
   if (first === 'all') {
     let hasNextPage = false;
-    let lastPaginationCursor = null;
+    let lastPaginationCursor;
     const txs: IEdge[] = [];
     do {
       const { query, variables } = getRequestsQuery(

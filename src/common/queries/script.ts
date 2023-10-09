@@ -79,7 +79,7 @@ const _listScriptsWithModelTx = async (modelTx: IContractEdge | IEdge) => {
 
   const modelName = findTag(modelTx, 'modelName') as string;
   const modelCreator = getTxOwner(modelTx);
-  let modelId = null;
+  let modelId;
 
   if (operationName === 'Model Creation Payment') {
     modelId = findTag(modelTx, 'modelTransaction') as string;
