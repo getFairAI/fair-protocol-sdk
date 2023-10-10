@@ -368,8 +368,10 @@ export const checkUserPaidInferenceFees = async (
 const checkLastRequests = async (
   operatorAddr: string,
   operatorFee: string,
+  scriptId: string,
   scriptName: string,
   scriptCurator: string,
+  modelCreator: string,
   isStableDiffusion = false,
 ) => {
   const { query, variables } = getRequestsQuery(
@@ -389,9 +391,6 @@ const checkLastRequests = async (
   for (const requestTx of data.transactions.edges) {
     const nImages = findTag(requestTx, 'nImages');
     const userAddr = requestTx.node.owner.address;
-    const creatorAddr = findTag(requestTx, 'modelCreator') as string;
-    const curatorAddr = findTag(requestTx, 'scriptCurator') as string;
-    const scriptId = findTag(requestTx, 'scriptTransaction') as string;
 
     let isValidRequest = false;
     if (
@@ -404,8 +403,8 @@ const checkLastRequests = async (
       isValidRequest = await checkUserPaidInferenceFees(
         requestTx.node.id,
         userAddr,
-        creatorAddr,
-        curatorAddr,
+        modelCreator,
+        scriptCurator,
         actualFee,
         scriptId,
       );
@@ -417,8 +416,8 @@ const checkLastRequests = async (
       isValidRequest = await checkUserPaidInferenceFees(
         requestTx.node.id,
         userAddr,
-        creatorAddr,
-        curatorAddr,
+        modelCreator,
+        scriptCurator,
         actualFee,
         scriptId,
       );
@@ -426,8 +425,8 @@ const checkLastRequests = async (
       isValidRequest = await checkUserPaidInferenceFees(
         requestTx.node.id,
         userAddr,
-        creatorAddr,
-        curatorAddr,
+        modelCreator,
+        scriptCurator,
         baseFee,
         scriptId,
       );
@@ -482,8 +481,10 @@ const isValidRegistration = async (
   txid: string,
   operatorFee: string,
   opAddress: string,
+  scriptId: string,
   scriptName: string,
   scriptCurator: string,
+  modelCreator: string,
   isStableDiffusion = false,
 ) => {
   const isCancelledTx = await isCancelled(txid, opAddress);
@@ -491,7 +492,15 @@ const isValidRegistration = async (
     return false;
   }
 
-  return checkLastRequests(opAddress, operatorFee, scriptName, scriptCurator, isStableDiffusion);
+  return checkLastRequests(
+    opAddress,
+    operatorFee,
+    scriptId,
+    scriptName,
+    scriptCurator,
+    modelCreator,
+    isStableDiffusion,
+  );
 };
 
 const checkHasOperators = async (
@@ -503,6 +512,7 @@ const checkHasOperators = async (
   const scriptId = (findTag(scriptTx, 'scriptTransaction') as string) ?? scriptTx.node.id;
   const scriptName = findTag(scriptTx, 'scriptName') as string;
   const scriptCurator = findTag(scriptTx, 'scriptCurator') as string;
+  const modelCreator = findTag(scriptTx, 'modelCreator') as string;
   const isStableDiffusion = findTag(scriptTx, 'outputConfiguration') as string;
 
   const { variables } = getOperatorQueryForScript(
@@ -531,8 +541,10 @@ const checkHasOperators = async (
           registration.node.id,
           opFee,
           registrationOwner,
+          scriptId,
           scriptName,
           scriptCurator,
+          modelCreator,
           !!isStableDiffusion && isStableDiffusion === 'stable-diffusion',
         )
       ) {
@@ -549,10 +561,13 @@ const checkHasOperators = async (
 
 const checkOpResponses = async (el: IContractEdge, filtered: IContractEdge[]) => {
   const opFee = findTag(el, 'operatorFee') as string;
-  const scriptName = findTag(el, 'scriptName') as string;
-  const scriptCurator = findTag(el, 'scriptCurator') as string;
+
   const registrationOwner = (findTag(el, 'sequencerOwner') as string) ?? el.node.owner.address;
   const scriptTx = await getById(findTag(el, 'scriptTransaction') as string);
+  const scriptName = findTag(scriptTx, 'scriptName') as string;
+  const scriptCurator = findTag(scriptTx, 'scriptCurator') as string;
+  const modelCreator = findTag(scriptTx, 'modelCreator') as string;
+  const scriptId = scriptTx.node.id;
   const isStableDiffusion = findTag(scriptTx, 'outputConfiguration') as string;
 
   if (
@@ -560,8 +575,10 @@ const checkOpResponses = async (el: IContractEdge, filtered: IContractEdge[]) =>
       el.node.id,
       opFee,
       registrationOwner,
+      scriptId,
       scriptName,
       scriptCurator,
+      modelCreator,
       !!isStableDiffusion && isStableDiffusion === 'stable-diffusion',
     ))
   ) {
