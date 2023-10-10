@@ -55,7 +55,7 @@
     "prepare": "husky install",
     "build": "rimraf ./dist && tsc && cp -r ./dist/src/* ./dist && rimraf ./dist/src && ts-node ./build.ts",
     "prepack": "cp -r dist/* .",
-    "postpack": "rimraf ./node ./web ./common",
+    "postpack": "rimraf ./node ./web ./common ./cjs",
     "lint:fix": "eslint --fix \"src/**/*.ts\"",
     "format:fix": "prettier --write \"src/**/*.ts\" --config ./.prettierrc",
     "lint": "eslint \"src/**/*.ts\"",

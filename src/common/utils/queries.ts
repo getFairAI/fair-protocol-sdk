@@ -511,7 +511,7 @@ const checkHasOperators = async (
 
   const scriptId = (findTag(scriptTx, 'scriptTransaction') as string) ?? scriptTx.node.id;
   const scriptName = findTag(scriptTx, 'scriptName') as string;
-  const scriptCurator = findTag(scriptTx, 'scriptCurator') as string;
+  const scriptCurator = findTag(scriptTx, 'sequencerOwner') ?? scriptTx.node.owner.address;
   const modelCreator = findTag(scriptTx, 'modelCreator') as string;
   const isStableDiffusion = findTag(scriptTx, 'outputConfiguration') as string;
 
@@ -564,10 +564,10 @@ const checkOpResponses = async (el: IContractEdge, filtered: IContractEdge[]) =>
 
   const registrationOwner = (findTag(el, 'sequencerOwner') as string) ?? el.node.owner.address;
   const scriptTx = await getById(findTag(el, 'scriptTransaction') as string);
-  const scriptName = findTag(scriptTx, 'scriptName') as string;
-  const scriptCurator = findTag(scriptTx, 'scriptCurator') as string;
-  const modelCreator = findTag(scriptTx, 'modelCreator') as string;
   const scriptId = scriptTx.node.id;
+  const scriptCurator = findTag(scriptTx, 'sequencerOwner') ?? scriptTx.node.owner.address;
+  const scriptName = findTag(scriptTx, 'scriptName') as string;
+  const modelCreator = findTag(scriptTx, 'modelCreator') as string;
   const isStableDiffusion = findTag(scriptTx, 'outputConfiguration') as string;
 
   if (
