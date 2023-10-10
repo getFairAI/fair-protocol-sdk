@@ -447,11 +447,12 @@ const checkLastRequests = async (
 };
 
 const hasOperatorAnswered = async (request: IEdge | IContractEdge, opAddress: string) => {
+  const requestId = findTag(request, 'inferenceTransaction') ?? request.node.id;
   const responseTags: ITagFilter[] = [
     ...DEFAULT_TAGS,
     {
       name: TAG_NAMES.requestTransaction,
-      values: [findTag(request, 'inferenceTransaction') as string],
+      values: [requestId],
     },
     { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_RESPONSE] },
   ];
