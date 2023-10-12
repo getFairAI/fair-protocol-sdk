@@ -16,33 +16,33 @@
 import fs from 'node:fs';
 import type NodeBundlr from '@bundlr-network/client/build/cjs/node/bundlr';
 import { JWKInterface } from 'warp-contracts';
-import { inference } from './actions/inference';
+import { inference } from '../actions/inference';
 import {
   MODEL_CREATION_PAYMENT,
   SCRIPT_CREATION_PAYMENT,
   REGISTER_OPERATION,
   MAX_MESSAGE_SIZE,
   U_DIVIDER,
-} from '../common/utils/constants';
-import { jwkToAddress, getArBalance } from './utils/arweave';
-import { initBundlr } from './utils/bundlr';
-import { findTag, logger } from '../common/utils/common';
-import { getById } from '../common/utils/queries';
-import { connectToU, getUBalance } from '../common/utils/warp';
-import { FairModel } from '../common/classes/model';
-import { FairOperator } from '../common/classes/operator';
-import { FairScript } from '../common/classes/script';
-import { listModels } from '../common/queries/model';
-import { listOperators } from '../common/queries/operator';
-import { listScripts } from '../common/queries/script';
-import { IEdge, IContractEdge, logLevels } from '../common/types/arweave';
-import { Configuration } from '../common/types/configuration';
-import { getRequests, getResponses } from '../common/queries/inference';
-import * as queryUtils from './../common/utils/queries';
-import * as inferenceUtils from './../common/utils/inference';
-import * as commonUtils from './../common/utils/common';
-import * as warpUtils from './../common/utils/warp';
-import * as constants from './../common/utils/constants';
+} from '../../common/utils/constants';
+import { jwkToAddress, getArBalance } from '../utils/arweave';
+import { initBundlr } from '../utils/bundlr';
+import { findTag, logger } from '../../common/utils/common';
+import { getById } from '../../common/utils/queries';
+import { connectToU, getUBalance } from '../../common/utils/warp';
+import { FairModel } from '../../common/classes/model';
+import { FairOperator } from '../../common/classes/operator';
+import { FairScript } from '../../common/classes/script';
+import { listModels } from '../../common/queries/model';
+import { listOperators } from '../../common/queries/operator';
+import { listScripts } from '../../common/queries/script';
+import { IEdge, IContractEdge, logLevels } from '../../common/types/arweave';
+import { Configuration } from '../../common/types/configuration';
+import { getRequests, getResponses } from '../../common/queries/inference';
+import * as queryUtils from '../../common/utils/queries';
+import * as inferenceUtils from '../../common/utils/inference';
+import * as commonUtils from '../../common/utils/common';
+import * as warpUtils from '../../common/utils/warp';
+import * as constants from '../../common/utils/constants';
 
 const walletError = 'Wallet not set';
 
