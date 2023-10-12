@@ -44,7 +44,7 @@ import {
   IQueryResult,
   ITagFilter,
 } from '../types/arweave';
-import { filterByUniqueScriptTxId, filterPreviousVersions, findTag } from './common';
+import { filterByUniqueScriptTxId, filterPreviousVersions, findTag, logger } from './common';
 import { isUTxValid } from './warp';
 import { FairScript } from '../classes/script';
 
@@ -621,23 +621,88 @@ export const getModelsQuery = (first = DEFAULT_PAGE_SIZE, after?: string) => ({
 export const modelsFilter = async (data: IContractEdge[]) => {
   const filtered: IContractEdge[] = [];
   for (const el of data) {
-    const modelId = findTag(el, 'modelTransaction') as string;
-    const modelOwner = findTag(el, 'sequencerOwner') as string;
-    const sequencerId = findTag(el, 'sequencerTxId') as string;
-
-    const isValidPayment = await isUTxValid(sequencerId);
-    if (!isValidPayment) {
-      // ignore
-    } else if (!modelOwner || !modelId) {
-      // ignore
-    } else if (await isFakeDeleted(modelId, modelOwner, 'model')) {
-      // ignore
-    } else {
+    const isValid = await validateModel(el);
+    if (isValid) {
       filtered.push(el);
+    } else {
+      // ignore
     }
   }
 
   return filtered;
+};
+
+export const validateModel = async (tx: IContractEdge) => {
+  const modelId = findTag(tx, 'modelTransaction') as string;
+  const modelOwner = findTag(tx, 'sequencerOwner') as string;
+  const sequencerId = findTag(tx, 'sequencerTxId') as string;
+
+  const isValidPayment = await isUTxValid(sequencerId);
+  if (!isValidPayment) {
+    logger.debug('Model payment Transaction is not valid');
+    return false;
+  } else if (!modelOwner || !modelId) {
+    logger.debug('Missing ModelId or ModelOwner in tags');
+    return false;
+  } else if (await isFakeDeleted(modelId, modelOwner, 'model')) {
+    logger.debug('Model transaction has been cancelled');
+    return false;
+  } else {
+    return true;
+  }
+};
+
+export const validateScript = async (tx: IContractEdge, modelId?: string) => {
+  if (modelId && findTag(tx, 'modelTransaction') !== modelId) {
+    logger.debug('Script is not compatible with chosen model');
+    return false;
+  }
+
+  const scriptId = findTag(tx, 'scriptTransaction') as string;
+  const scriptOwner = findTag(tx, 'sequencerOwner') as string;
+  const sequencerId = findTag(tx, 'sequencerTxId') as string;
+
+  const isValidPayment = await isUTxValid(sequencerId);
+  if (!isValidPayment) {
+    logger.debug('Script payment Transaction is not valid');
+    return false;
+  } else if (!scriptOwner || !scriptId) {
+    logger.debug('Missing Script Id or Script Owner in tags');
+    return false;
+  } else if (await isFakeDeleted(scriptId, scriptOwner, 'script')) {
+    logger.debug('Script transaction has been cancelled');
+    return false;
+  } else {
+    const txs = [tx];
+    await checkHasOperators(tx, txs);
+    if (txs.length === 0) {
+      logger.debug('Script has no valid operators');
+    }
+    return txs.length > 0;
+  }
+};
+
+export const validateOperator = async (tx: IContractEdge, scriptId?: string) => {
+  if (scriptId && findTag(tx, 'scriptTransaction') !== scriptId) {
+    logger.debug('Operator is not registered for selected script');
+    return false;
+  }
+
+  const sequencerId = findTag(tx, 'sequencerTxId') as string;
+
+  const isValidPayment = await isUTxValid(sequencerId);
+  if (!isValidPayment) {
+    // ignore
+    logger.debug('Script payment Transaction is not valid');
+    return false;
+  } else {
+    const txs = [tx];
+    await checkOpResponses(tx, txs);
+    if (txs.length === 0) {
+      logger.debug('Operator registration is not valid');
+    }
+    return txs.length > 0;
+  }
 };
 
 export const scriptsFilter = async (data: IContractEdge[]) => {

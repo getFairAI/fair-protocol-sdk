@@ -46,11 +46,11 @@ import * as constants from './../common/utils/constants';
 
 const walletError = 'Wallet not set';
 
-export default abstract class FairSDK {
+abstract class FairSDK {
   // no constructor, only static methods
-  private static _model: FairModel;
-  private static _script: FairScript;
-  private static _operator: FairOperator;
+  private static _model?: FairModel;
+  private static _script?: FairScript;
+  private static _operator?: FairOperator;
   private static _wallet: JWKInterface;
   private static _address: string;
   private static _bundlr: NodeBundlr;
@@ -164,6 +164,14 @@ export default abstract class FairSDK {
             "Invalid model transaction, please use the txid of a 'Model Creation Payment' transaction",
           ),
         );
+
+        if (!(await queryUtils.validateModel(this._model.raw as IContractEdge))) {
+          this._model = undefined;
+          throw new Error('Invalid Model');
+        } else {
+          // valid script continue
+        }
+
         break;
       case 'script':
         this._script = new FairScript(
@@ -173,6 +181,13 @@ export default abstract class FairSDK {
             "Invalid script transaction, please use the txid of a 'Scrip Creation Payment' transaction",
           ),
         );
+        if (!(await queryUtils.validateScript(this._script.raw as IContractEdge))) {
+          this._script = undefined;
+          throw new Error('Invalid script');
+        } else {
+          // valid script continue
+        }
+
         break;
       case 'operator':
         this._operator = new FairOperator(
@@ -182,6 +197,13 @@ export default abstract class FairSDK {
             "Invalid operator transaction, please use the txid of a 'Operator Registration' transaction",
           ),
         );
+        if (!(await queryUtils.validateOperator(this._operator.raw as IContractEdge))) {
+          this._operator = undefined;
+          throw new Error('Invalid operator');
+        } else {
+          // valid script continue
+        }
+
         break;
       default:
         throw new Error(`Invalid type ${type}`);
@@ -270,6 +292,10 @@ export default abstract class FairSDK {
         configuration,
       );
       logger.info(`Inference result: ${JSON.stringify(result)}`);
+    } else {
+      throw new Error('Please use FairSDK.use() to set model, script and operator');
     }
   };
 }
+
+export default FairSDK;
