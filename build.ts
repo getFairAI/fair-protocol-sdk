@@ -24,7 +24,7 @@ export const logger = Pino({
 
 try {
   const sharedConfig = {
-    entryPoints: [ './src/node/index.ts' ], // entryPoints,
+    entryPoints: [ './src/node/index.cts' ], // entryPoints,
     bundle: true,
     minify: true,
     plugins: [ nodeExternalsPlugin() ],
@@ -33,8 +33,9 @@ try {
 
   await esbuild.build({
     ...sharedConfig,
+    format: 'cjs',
     platform: 'node', // for CJS
-    outfile: 'dist/cjs/index.cjs',
+    outfile: 'dist/node/cjs/index.cjs',
   });
 } catch (e) {
   logger.error(e);

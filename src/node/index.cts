@@ -298,4 +298,4 @@ abstract class FairSDK {
   };
 }
 
-export default FairSDK;
+module.exports = FairSDK;

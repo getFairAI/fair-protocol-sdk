@@ -2,26 +2,31 @@
 
 ## Installation
 
-Install with npm from link or ARNS name
+Install with npm
 
 ```sh
-npm i https://arweave.net/8q_uDLWfXIMEWSuq-eQLQFqTGDiJPOl3hIwkwXqZIQI 
-# OR
-npm i https://fairprotocolsdk.arweave.dev # currently not working
-```
+npm i @fair-protocol/sdk
 
-**Note:** Using ARNS name will use latest version of the sdk deployed
+```
 
 ## Usage
 
+Using Commonjs:
+
+```js
+const FairSDK = require('@fair-protocol/sdk/cjs');
+```
+
+Using ESM:
+
 ```ts
-import FairSDK from 'fair-protocol-sdk/node';
+import FairSDK from '@fair-protocol/sdk/node';
 ```
 
 Or Import For Browser
 
 ```ts
-import FairSDKWeb from 'fair-protocol-sdk/web';
+import FairSDKWeb from '@fair-protocol/sdk/web';
 ```
 
 ### Query API
@@ -31,46 +36,46 @@ import FairSDKWeb from 'fair-protocol-sdk/web';
 * List Models
 
 ```ts
-const models = await FairSDK.queries.listModels();
+const models = await FairSDK.query.listModels();
 ```
 
 * List Scripts
 
 ```ts
-const allScripts = await FairSDK.queries.listScripts(); // without filters
+const allScripts = await FairSDK.query.listScripts(); // without filters
 // OR
-const scriptsByModelId  = await FairSDK.queries.listScripts('txid'); // filter by model tx id
+const scriptsByModelId  = await FairSDK.query.listScripts('txid'); // filter by model tx id
 // OR
 const modelTx = models[0].raw; // use model tx
-const scriptsByModelTx = await FairSDK.queries.listScripts(modelTx); // filter by model tx object
+const scriptsByModelTx = await FairSDK.query.listScripts(modelTx); // filter by model tx object
 ```
 
 * List Operators
 
 ```ts
-const allScripts = await FairSDK.queries.listOperators(); // without filters
+const allScripts = await FairSDK.query.listOperators(); // without filters
 // OR
-const scriptsByModelId  = await FairSDK.queries.listOperators('txid'); // filter by script tx id
+const scriptsByModelId  = await FairSDK.query.listOperators('txid'); // filter by script tx id
 // OR
 const scriptTx = allScripts[0]; // use scirpt tx
-const scriptsByModelTx = await FairSDK.queries.listOperators(scriptTx); // filter by script tx object
+const scriptsByModelTx = await FairSDK.query.listOperators(scriptTx); // filter by script tx object
 ```
 
 * Get Inference Requests
 
 ```ts
 const nRequests = 10; // number of max txs to get
-const requestTxs = await FairSDK.queries.getRequests(nRequests);
+const requestTxs = await FairSDK.query.getRequests(nRequests);
 ```
 
 * Get Inference Responses
 
 ```ts
 const requestIds = [ 'responseTxId', 'responseTxId2', '...']; // number of max txs to get
-const responsesForRequests = await FairSDK.queries.getResponses(requestIds);
+const responsesForRequests = await FairSDK.query.getResponses(requestIds);
 
 const nRequests = 10; // number of max txs to get
-const allResponses = await FairSDK.queries.getAllResponses(nRequests);
+const allResponses = await FairSDK.query.getAllResponses(nRequests);
 ```
 
 ### Inference
