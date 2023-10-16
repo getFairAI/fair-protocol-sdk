@@ -24,7 +24,7 @@ export const logger = Pino({
 
 try {
   const sharedConfig = {
-    entryPoints: [ './src/node/cjs/index.cts' ], // entryPoints,
+    entryPoints: [ './src/node/index.cts' ], // entryPoints,
     bundle: true,
     minify: true,
     plugins: [ nodeExternalsPlugin() ],

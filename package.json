@@ -11,8 +11,8 @@
   "exports": {
     "./cjs": "./node/cjs/index.cjs",
     "./node": {
-      "types": "./node/esm/index.d.ts",
-      "default": "./node/esm/index.js"
+      "types": "./node/index.d.ts",
+      "default": "./node/index.js"
     },
     "./web": {
       "types": "./web/index.d.ts",
