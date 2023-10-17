@@ -44,7 +44,13 @@ import {
   IQueryResult,
   ITagFilter,
 } from '../types/arweave';
-import { filterByUniqueScriptTxId, filterPreviousVersions, findTag, logger } from './common';
+import {
+  filterByUniqueModelTxId,
+  filterByUniqueScriptTxId,
+  filterPreviousVersions,
+  findTag,
+  logger,
+} from './common';
 import { isUTxValid } from './warp';
 import { FairScript } from '../classes/script';
 
@@ -620,7 +626,8 @@ export const getModelsQuery = (first = DEFAULT_PAGE_SIZE, after?: string) => ({
 
 export const modelsFilter = async (data: IContractEdge[]) => {
   const filtered: IContractEdge[] = [];
-  for (const el of data) {
+  const uniqueModels: IContractEdge[] = filterByUniqueModelTxId(data);
+  for (const el of uniqueModels) {
     const isValid = await validateModel(el);
     if (isValid) {
       filtered.push(el);
