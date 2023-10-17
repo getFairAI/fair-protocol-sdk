@@ -30,6 +30,28 @@ export const findTag = (tx: IEdge | IContractEdge, tagName: tagName) =>
 export const getTxOwner = (tx: IEdge | IContractEdge) =>
   findTag(tx, 'sequencerOwner') ?? tx.node.owner.address;
 
+export const filterByUniqueModelTxId = <T extends Array<IContractEdge>>(data: T) => {
+  const newData: string[] = [];
+  data.sort((a: IContractEdge, b: IContractEdge) => {
+    const aTimestamp = parseInt(findTag(a, 'unixTime') as string, 10);
+    const bTimestamp = parseInt(findTag(b, 'unixTime') as string, 10);
+
+    if (aTimestamp === bTimestamp) {
+      return 1;
+    }
+    return aTimestamp - bTimestamp;
+  });
+
+  return data.filter((el) => {
+    if (newData.includes(findTag(el, 'modelTransaction') as string)) {
+      return false;
+    } else {
+      newData.push(findTag(el, 'modelTransaction') as string);
+      return true;
+    }
+  });
+};
+
 export const filterByUniqueScriptTxId = <T extends Array<IContractEdge | IEdge>>(data: T) => {
   const newData: string[] = [];
   data.sort((a: IContractEdge | IEdge, b: IContractEdge | IEdge) => {
