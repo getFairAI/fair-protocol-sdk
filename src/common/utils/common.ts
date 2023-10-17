@@ -32,17 +32,19 @@ export const getTxOwner = (tx: IEdge | IContractEdge) =>
 
 export const filterByUniqueModelTxId = <T extends Array<IContractEdge>>(data: T) => {
   const newData: string[] = [];
-  data.sort((a: IContractEdge, b: IContractEdge) => {
+  // do not mutate array
+  const mutatbleCopy = [...data];
+  mutatbleCopy.sort((a: IContractEdge, b: IContractEdge) => {
     const aTimestamp = parseInt(findTag(a, 'unixTime') as string, 10);
     const bTimestamp = parseInt(findTag(b, 'unixTime') as string, 10);
 
     if (aTimestamp === bTimestamp) {
       return 1;
     }
-    return aTimestamp - bTimestamp;
+    return bTimestamp - aTimestamp;
   });
 
-  return data.filter((el) => {
+  return mutatbleCopy.filter((el) => {
     if (newData.includes(findTag(el, 'modelTransaction') as string)) {
       return false;
     } else {
@@ -54,17 +56,18 @@ export const filterByUniqueModelTxId = <T extends Array<IContractEdge>>(data: T)
 
 export const filterByUniqueScriptTxId = <T extends Array<IContractEdge | IEdge>>(data: T) => {
   const newData: string[] = [];
-  data.sort((a: IContractEdge | IEdge, b: IContractEdge | IEdge) => {
+  const mutatbleCopy = [...data];
+  mutatbleCopy.sort((a: IContractEdge | IEdge, b: IContractEdge | IEdge) => {
     const aTimestamp = parseInt(findTag(a, 'unixTime') as string, 10);
     const bTimestamp = parseInt(findTag(b, 'unixTime') as string, 10);
 
     if (aTimestamp === bTimestamp) {
       return 1;
     }
-    return aTimestamp - bTimestamp;
+    return bTimestamp - aTimestamp;
   });
 
-  return data.filter((el) => {
+  return mutatbleCopy.filter((el) => {
     if (newData.includes(findTag(el, 'scriptTransaction') as string)) {
       return false;
     } else {
