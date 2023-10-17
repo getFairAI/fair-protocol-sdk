@@ -1,6 +1,6 @@
 {
   "name": "@fair-protocol/sdk",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "## Installation",
   "type": "module",
   "files": [
@@ -20,11 +20,10 @@
     }
   },
   "dependencies": {
+    "@apollo/client": "^3.8.6",
     "@bundlr-network/client": "^0.11.9",
     "arweave": "^1.14.0",
     "esbuild": "^0.18.17",
-    "graphql": "^16.7.1",
-    "graphql-request": "^6.1.0",
     "pino": "^8.14.1",
     "redstone-api": "^0.4.11",
     "warp-contracts": "^1.4.5"
