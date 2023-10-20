@@ -268,6 +268,8 @@ export default abstract class FairSDKWeb {
       );
 
       logger.info(`Payment Successful: ${JSON.stringify(paymentResult)}`);
+
+      return paymentResult;
     }
   };
 
