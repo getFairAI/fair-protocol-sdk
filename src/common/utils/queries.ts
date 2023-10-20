@@ -426,7 +426,7 @@ const checkLastRequest = async (
   );
 
   const { data }: { data: IQueryResult } = await apolloClient.query({
-    query: query,
+    query,
     variables,
   });
 
@@ -436,8 +436,10 @@ const checkLastRequest = async (
 
   // ignore most recent request
   const mutatableData = [...data.transactions.edges];
-  // requests are ordered by most recent first
-  mutatableData.reverse().pop();
+  // requests are ordered by most recent first, reverse so most recent is last element
+  mutatableData.reverse();
+  // remove most recent request
+  mutatableData.pop();
 
   // validate all other requests
   for (const requestTx of mutatableData) {

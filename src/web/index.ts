@@ -270,6 +270,8 @@ export default abstract class FairSDKWeb {
       logger.info(`Payment Successful: ${JSON.stringify(paymentResult)}`);
 
       return paymentResult;
+    } else {
+      throw new Error('Please use FairSDK.use() to set model, script and operator');
     }
   };
 
