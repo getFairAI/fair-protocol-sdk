@@ -255,6 +255,7 @@ export const handlePayment = async (
   return {
     totalUCost: uCost,
     totalUsdCost: usdCost,
+    requestId: bundlrId,
     operatorPaymentTx,
     curatorPaymentTx,
     creatorPaymentTx,

@@ -292,6 +292,8 @@ abstract class FairSDK {
         configuration,
       );
       logger.info(`Inference result: ${JSON.stringify(result)}`);
+
+      return result;
     } else {
       throw new Error('Please use FairSDK.use() to set model, script and operator');
     }

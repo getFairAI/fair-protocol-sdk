@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-import { GraphQLClient, Variables, gql } from 'graphql-request';
 import {
   CANCEL_OPERATION,
   CONVERSATION_START,
@@ -26,7 +25,6 @@ import {
   MODEL_CREATION_PAYMENT_TAGS,
   MODEL_DELETION,
   NET_ARWEAVE_URL,
-  N_PREVIOUS_BLOCKS,
   OPERATOR_REGISTRATION_PAYMENT_TAGS,
   PROTOCOL_NAME,
   SCRIPT_CREATION_PAYMENT_TAGS,
@@ -53,11 +51,26 @@ import {
 } from './common';
 import { isUTxValid } from './warp';
 import { FairScript } from '../classes/script';
+import { ApolloClient, DocumentNode, InMemoryCache, gql } from '@apollo/client/core';
 
 const DEFAULT_PAGE_SIZE = 10;
 const RADIX = 10;
 
-const client = new GraphQLClient(`${NET_ARWEAVE_URL}/graphql`);
+export const apolloClient = new ApolloClient({
+  // uri: 'http://localhost:1984/graphql',
+  uri: NET_ARWEAVE_URL + '/graphql',
+  cache: new InMemoryCache(),
+  defaultOptions: {
+    watchQuery: {
+      fetchPolicy: 'cache-and-network',
+      errorPolicy: 'all',
+    },
+    query: {
+      fetchPolicy: 'cache-first',
+      errorPolicy: 'all',
+    },
+  },
+});
 
 const FIND_BY_TAGS = gql`
   query FIND_BY_TAGS($tags: [TagFilter!], $first: Int!, $after: String) {
@@ -203,45 +216,60 @@ const inputFnName = 'transfer';
 
 // helper functions
 export const getByIds = async (txids: string[]) => {
-  const data: IQueryResult = await client.request(QUERY_TX_BY_IDS, {
-    ids: txids,
-    first: txids.length,
+  const { data }: { data: IQueryResult } = await apolloClient.query({
+    query: QUERY_TX_BY_IDS,
+    variables: {
+      ids: txids,
+      first: txids.length,
+    },
   });
 
   return data.transactions.edges;
 };
 
 export const getById = async (txid: string) => {
-  const data: IQueryResult = await client.request(QUERY_TX_BY_ID, {
-    id: txid,
+  const { data }: { data: IQueryResult } = await apolloClient.query({
+    query: QUERY_TX_BY_ID,
+    variables: {
+      id: txid,
+    },
   });
 
   return data.transactions.edges[0];
 };
 
 export const getTxWithOwners = async (tags: ITagFilter[], owners: string[]) => {
-  const data: IQueryResult = await client.request(QUERY_TX_WITH_OWNERS, {
-    tags,
-    owners,
+  const { data }: { data: IQueryResult } = await apolloClient.query({
+    query: QUERY_TX_WITH_OWNERS,
+    variables: {
+      tags,
+      owners,
+    },
   });
 
   return data.transactions.edges;
 };
 
 export const findByTags = async (tags: ITagFilter[], first: number, after?: string) => {
-  const data: IContractQueryResult = await client.request(FIND_BY_TAGS, {
-    tags,
-    first,
-    after,
+  const { data }: { data: IContractQueryResult } = await apolloClient.query({
+    query: FIND_BY_TAGS,
+    variables: {
+      tags,
+      first,
+      after,
+    },
   });
 
   return data;
 };
 
 export const getTxOwners = async (txids: string[]) => {
-  const data: IQueryResult = await client.request(QUERY_TXS_OWNERS, {
-    ids: txids,
-    first: txids.length,
+  const { data }: { data: IQueryResult } = await apolloClient.query({
+    query: QUERY_TXS_OWNERS,
+    variables: {
+      ids: txids,
+      first: txids.length,
+    },
   });
 
   return data.transactions.edges.map((el: IEdge) => el.node.owner.address);
@@ -260,11 +288,15 @@ export const getTxsWithOwners = async (tags: ITagFilter[], owners: string[], fir
   }
 
   do {
-    const data: IQueryResult = await client.request(FIND_BY_TAGS, {
-      tags,
-      first,
-      after: lastPaginationCursor,
+    const result = await apolloClient.query({
+      query: FIND_BY_TAGS,
+      variables: {
+        tags,
+        first,
+        after: lastPaginationCursor,
+      },
     });
+    const data = result.data as IQueryResult;
 
     for (const tx of data.transactions.edges) {
       const owner = findTag(tx, 'sequencerOwner') ?? tx.node.owner.address;
@@ -315,9 +347,12 @@ const queryCheckUserPayment = async (
     },
   ];
 
-  const result: IQueryResult = await client.request(FIND_BY_TAGS, {
-    tags,
-    first: 4,
+  const { data: result }: { data: IQueryResult } = await apolloClient.query({
+    query: FIND_BY_TAGS,
+    variables: {
+      tags,
+      first: 4,
+    },
   });
 
   return result.transactions.edges;
@@ -371,7 +406,7 @@ export const checkUserPaidInferenceFees = async (
 };
 
 // app logic
-const checkLastRequests = async (
+const checkLastRequest = async (
   operatorAddr: string,
   operatorFee: string,
   scriptId: string,
@@ -380,21 +415,34 @@ const checkLastRequests = async (
   modelCreator: string,
   isStableDiffusion = false,
 ) => {
+  const nRequestToValidate = 2;
   const { query, variables } = getRequestsQuery(
     undefined,
     scriptName,
     scriptCurator,
     operatorAddr,
     undefined,
-    N_PREVIOUS_BLOCKS,
+    nRequestToValidate,
   );
 
-  const data: IQueryResult = await client.request(query, variables as Variables);
+  const { data }: { data: IQueryResult } = await apolloClient.query({
+    query,
+    variables,
+  });
 
   const baseFee = parseFloat(operatorFee);
 
   const validTxs: IEdge[] = [];
-  for (const requestTx of data.transactions.edges) {
+
+  // ignore most recent request
+  const mutatableData = [...data.transactions.edges];
+  // requests are ordered by most recent first, reverse so most recent is last element
+  mutatableData.reverse();
+  // remove most recent request
+  mutatableData.pop();
+
+  // validate all other requests
+  for (const requestTx of mutatableData) {
     const nImages = findTag(requestTx, 'nImages');
     const userAddr = requestTx.node.owner.address;
 
@@ -449,7 +497,7 @@ const checkLastRequests = async (
     }
   }
 
-  return validTxs.length === data.transactions.edges.length;
+  return validTxs.length === mutatableData.length;
 };
 
 const hasOperatorAnswered = async (request: IEdge | IContractEdge, opAddress: string) => {
@@ -499,7 +547,7 @@ const isValidRegistration = async (
     return false;
   }
 
-  return checkLastRequests(
+  return checkLastRequest(
     opAddress,
     operatorFee,
     scriptId,
@@ -712,9 +760,9 @@ export const validateOperator = async (tx: IContractEdge, scriptId?: string) => 
   }
 };
 
-export const scriptsFilter = async (data: IContractEdge[]) => {
+export const scriptsFilter = async (data: IContractEdge[], validateOperators = false) => {
   const uniqueScripts = filterByUniqueScriptTxId<IContractEdge[]>(data);
-  const filteredScritps = filterPreviousVersions<IContractEdge[]>(uniqueScripts as IContractEdge[]);
+  const filteredScritps = filterPreviousVersions<IContractEdge[]>(uniqueScripts);
   const filtered: IContractEdge[] = [];
   for (const el of filteredScritps) {
     const scriptId = findTag(el, 'scriptTransaction') as string;
@@ -729,8 +777,10 @@ export const scriptsFilter = async (data: IContractEdge[]) => {
       // ignore
     } else if (await isFakeDeleted(scriptId, scriptOwner, 'script')) {
       // if fake deleted ignore
-    } else {
+    } else if (validateOperators) {
       await checkHasOperators(el, filtered);
+    } else {
+      filtered.push(el);
     }
   }
 
@@ -967,8 +1017,12 @@ export const getResponsesQuery = (
   }
 };
 
-export const runQuery = async (query: string, variables: Variables) => {
-  const data: IQueryResult = await client.request(query, variables);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const runQuery = async (query: DocumentNode, variables: any) => {
+  const { data }: { data: IQueryResult } = await apolloClient.query({
+    query,
+    variables,
+  });
 
   return data;
 };
