@@ -51,37 +51,19 @@ import {
 } from './common';
 import { isUTxValid } from './warp';
 import { FairScript } from '../classes/script';
-import {
-  ApolloClient,
-  ApolloLink,
-  DocumentNode,
-  HttpLink,
-  InMemoryCache,
-  from,
-  gql,
-  split,
-} from '@apollo/client';
+import { ApolloClient, DocumentNode, InMemoryCache, gql } from '@apollo/client/core';
 
 const DEFAULT_PAGE_SIZE = 10;
 const RADIX = 10;
 
-const mapLink = new ApolloLink((operation, forward) => forward(operation).map((result) => result));
-
 export const apolloClient = new ApolloClient({
   // uri: 'http://localhost:1984/graphql',
+  uri: NET_ARWEAVE_URL + '/graphql',
   cache: new InMemoryCache(),
-  link: split(
-    () => true, // default to arweave net
-    from([
-      // chainRequestLink,
-      mapLink,
-      new HttpLink({ uri: NET_ARWEAVE_URL + '/graphql' }),
-    ]),
-  ),
   defaultOptions: {
     watchQuery: {
-      fetchPolicy: 'network-only',
-      errorPolicy: 'ignore',
+      fetchPolicy: 'cache-and-network',
+      errorPolicy: 'all',
     },
     query: {
       fetchPolicy: 'cache-first',
@@ -89,6 +71,7 @@ export const apolloClient = new ApolloClient({
     },
   },
 });
+
 const FIND_BY_TAGS = gql`
   query FIND_BY_TAGS($tags: [TagFilter!], $first: Int!, $after: String) {
     transactions(tags: $tags, first: $first, after: $after, sort: HEIGHT_DESC) {
@@ -423,7 +406,7 @@ export const checkUserPaidInferenceFees = async (
 };
 
 // app logic
-const checkLastRequests = async (
+const checkLastRequest = async (
   operatorAddr: string,
   operatorFee: string,
   scriptId: string,
@@ -453,7 +436,8 @@ const checkLastRequests = async (
 
   // ignore most recent request
   const mutatableData = [...data.transactions.edges];
-  mutatableData.pop();
+  // requests are ordered by most recent first
+  mutatableData.reverse().pop();
 
   // validate all other requests
   for (const requestTx of mutatableData) {
@@ -561,7 +545,7 @@ const isValidRegistration = async (
     return false;
   }
 
-  return checkLastRequests(
+  return checkLastRequest(
     opAddress,
     operatorFee,
     scriptId,
