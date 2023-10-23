@@ -48,6 +48,7 @@ export const addAtomicAssetTags = (
   name: string,
   ticker: string,
   balance = 1,
+  appendIdx?: number,
 ) => {
   // add atomic asset tags
   const manifest = {
@@ -69,17 +70,25 @@ export const addAtomicAssetTags = (
     ticker,
   };
 
-  tags.push({ name: TAG_NAMES.appName, value: 'SmartWeaveContract' });
-  tags.push({ name: TAG_NAMES.appVersion, value: '0.3.0' });
-  tags.push({ name: TAG_NAMES.contractSrc, value: ATOMIC_ASSET_CONTRACT_SOURCE_ID }); // use contract source here
-  tags.push({
-    name: TAG_NAMES.contractManifest,
-    value: JSON.stringify(manifest),
-  });
-  tags.push({
-    name: TAG_NAMES.initState,
-    value: JSON.stringify(initState),
-  });
+  const newTags = [
+    { name: TAG_NAMES.appName, value: 'SmartWeaveContract' },
+    { name: TAG_NAMES.appVersion, value: '0.3.0' },
+    { name: TAG_NAMES.contractSrc, value: ATOMIC_ASSET_CONTRACT_SOURCE_ID },
+    {
+      name: TAG_NAMES.contractManifest,
+      value: JSON.stringify(manifest),
+    },
+    {
+      name: TAG_NAMES.initState,
+      value: JSON.stringify(initState),
+    },
+  ];
+
+  if (!appendIdx) {
+    tags.push(...newTags);
+  } else {
+    tags.splice(appendIdx, 0, ...newTags);
+  }
 };
 
 export const addRareweaveTags = (
@@ -90,6 +99,7 @@ export const addRareweaveTags = (
   royalty: number,
   contentType: string,
   balance = 1,
+  appendIdx?: number,
 ) => {
   if (royalty < 0 || royalty > MAX_ROYALTY) {
     royalty = 0;
@@ -123,17 +133,25 @@ export const addRareweaveTags = (
     royalty,
   };
 
-  tags.push({ name: TAG_NAMES.appName, value: 'SmartWeaveContract' });
-  tags.push({ name: TAG_NAMES.appVersion, value: '0.3.0' });
-  tags.push({ name: TAG_NAMES.contractSrc, value: RAREWEAVE_CONTRACT_ID }); // use contract source here
-  tags.push({
-    name: TAG_NAMES.contractManifest,
-    value: JSON.stringify(manifest),
-  });
-  tags.push({
-    name: TAG_NAMES.initState,
-    value: JSON.stringify(initState),
-  });
+  const newTags = [
+    { name: TAG_NAMES.appName, value: 'SmartWeaveContract' },
+    { name: TAG_NAMES.appVersion, value: '0.3.0' },
+    { name: TAG_NAMES.contractSrc, value: RAREWEAVE_CONTRACT_ID },
+    {
+      name: TAG_NAMES.contractManifest,
+      value: JSON.stringify(manifest),
+    },
+    {
+      name: TAG_NAMES.initState,
+      value: JSON.stringify(initState),
+    },
+  ];
+
+  if (!appendIdx) {
+    tags.push(...newTags);
+  } else {
+    tags.splice(appendIdx, 0, ...newTags);
+  }
 };
 
 const addConfigTags = (tags: ITag[], configuration: Configuration) => {
@@ -296,7 +314,7 @@ export const getUploadTags = (
 
   addConfigTags(tags, configuration);
 
-  addAtomicAssetTags(tags, userAddr, 'Fair Protocol Prompt Atomic Asset', 'FPPAA', 1);
+  addAtomicAssetTags(tags, userAddr, 'Fair Protocol Prompt Atomic Asset', 'FPPAA');
 
   tags.push({ name: TAG_NAMES.license, value: UDL_ID });
   tags.push({ name: TAG_NAMES.derivation, value: 'Allowed-With-License-Passthrough' });
