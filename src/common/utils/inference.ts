@@ -195,7 +195,7 @@ export const handlePayment = async (
   conversationId: number,
   modelCreator: string,
   operatorAddrr: string,
-  configuration: Configuration,
+  nImages?: number,
   origin = 'node',
 ) => {
   const parsedUFee = parseFloat(inferenceFee);
@@ -214,18 +214,16 @@ export const handlePayment = async (
     { name: TAG_NAMES.contentType, value: contentType },
   ];
 
-  if (origin === 'sdk') {
+  if (origin === 'node') {
     paymentTags.push({ name: TAG_NAMES.txOrigin, value: TX_ORIGIN_NODE });
   } else {
     paymentTags.push({ name: TAG_NAMES.txOrigin, value: TX_ORIGIN_WEB });
   }
 
-  addConfigTags(paymentTags, configuration);
-
   let adjustedInferenceFee = parsedUFee;
-  if (script.isStableDiffusion && configuration.nImages && configuration.nImages > 0) {
+  if (script.isStableDiffusion && nImages && nImages > 0) {
     // calculate fee for n-images
-    adjustedInferenceFee = parsedUFee * configuration.nImages;
+    adjustedInferenceFee = parsedUFee * nImages;
   } else if (script.isStableDiffusion) {
     // default n images is 4 if not specified
     const defaultNImages = 4;
@@ -234,10 +232,10 @@ export const handlePayment = async (
     // no need to change inference fee
   }
 
-  const operatorFeeShare = adjustedInferenceFee * OPERATOR_PERCENTAGE_FEE;
-  const marketPlaceFeeShare = adjustedInferenceFee * MARKETPLACE_PERCENTAGE_FEE;
-  const creatorFeeShare = adjustedInferenceFee * CREATOR_PERCENTAGE_FEE;
-  const curatorFeeShare = adjustedInferenceFee * CURATOR_PERCENTAGE_FEE;
+  const operatorFeeShare = Math.ceil(adjustedInferenceFee * OPERATOR_PERCENTAGE_FEE);
+  const marketPlaceFeeShare = Math.ceil(adjustedInferenceFee * MARKETPLACE_PERCENTAGE_FEE);
+  const creatorFeeShare = Math.ceil(adjustedInferenceFee * CREATOR_PERCENTAGE_FEE);
+  const curatorFeeShare = Math.ceil(adjustedInferenceFee * CURATOR_PERCENTAGE_FEE);
 
   // pay operator
   const operatorPaymentTx = await sendU(
@@ -306,7 +304,7 @@ export const getUploadTags = (
   const tempDate = Date.now() / secondInMS;
   tags.push({ name: TAG_NAMES.unixTime, value: tempDate.toString() });
   tags.push({ name: TAG_NAMES.contentType, value: contentType });
-  if (origin === 'sdk') {
+  if (origin === 'node') {
     tags.push({ name: TAG_NAMES.txOrigin, value: TX_ORIGIN_NODE });
   } else {
     tags.push({ name: TAG_NAMES.txOrigin, value: TX_ORIGIN_WEB });

@@ -55,7 +55,7 @@ const inference = async (
       conversationId,
       model.owner,
       operator.owner,
-      configuration,
+      configuration.nImages,
     );
   } catch (error) {
     throw new Error(JSON.stringify(error));
