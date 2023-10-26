@@ -264,7 +264,8 @@ export default abstract class FairSDKWeb {
         conversationId,
         this._model.owner,
         this.operator.owner,
-        configuration,
+        configuration.nImages,
+        'web',
       );
 
       logger.info(`Payment Successful: ${JSON.stringify(paymentResult)}`);
