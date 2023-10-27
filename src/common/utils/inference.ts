@@ -224,10 +224,12 @@ export const handlePayment = async (
   if (script.isStableDiffusion && nImages && nImages > 0) {
     // calculate fee for n-images
     adjustedInferenceFee = parsedUFee * nImages;
+    paymentTags.push({ name: TAG_NAMES.nImages, value: nImages.toString() });
   } else if (script.isStableDiffusion) {
     // default n images is 4 if not specified
     const defaultNImages = 4;
     adjustedInferenceFee = parsedUFee * defaultNImages;
+    paymentTags.push({ name: TAG_NAMES.nImages, value: defaultNImages.toString() });
   } else {
     // no need to change inference fee
   }
