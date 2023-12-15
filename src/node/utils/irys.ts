@@ -14,12 +14,16 @@
  */
 
 import { JWKInterface } from 'warp-contracts';
-import Bundlr from '@bundlr-network/client/build/cjs/cjsIndex';
 import { NODE2_BUNDLR_URL } from '../../common/utils/constants';
+import Irys from '@irys/sdk';
 
-export const initBundlr = async (jwk?: JWKInterface) => {
-  const bundlr = new Bundlr(NODE2_BUNDLR_URL, 'arweave', jwk || window.arweaveWallet);
-  await bundlr.ready();
+export const initIrys = async (jwk?: JWKInterface) => {
+  const irys = new Irys({
+    url: NODE2_BUNDLR_URL,
+    token: 'arweave',
+    key: jwk || window.arweaveWallet,
+  });
+  await irys.ready();
 
-  return bundlr;
+  return irys;
 };

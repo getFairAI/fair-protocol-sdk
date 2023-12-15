@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.8.6",
-    "@bundlr-network/client": "^0.11.9",
+    "@irys/sdk": "^0.1.1",
     "@permaweb/stampjs": "^0.6.2",
     "arweave": "^1.14.0",
     "esbuild": "^0.18.17",
