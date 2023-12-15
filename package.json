@@ -22,6 +22,7 @@
   "dependencies": {
     "@apollo/client": "^3.8.6",
     "@bundlr-network/client": "^0.11.9",
+    "@permaweb/stampjs": "^0.6.2",
     "arweave": "^1.14.0",
     "esbuild": "^0.18.17",
     "pino": "^8.14.1",
