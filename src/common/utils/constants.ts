@@ -107,6 +107,7 @@ export const TAG_NAMES = {
   sequencerTxId: 'Sequencer-Tx-Id',
   generateAssets: 'Generate-Assets',
   rareweaveConfig: 'Rareweave-Config',
+  dataSource: 'Data-Source',
 };
 
 export const TX_ORIGIN_NODE = 'Fair Protocol SDK';

@@ -34,6 +34,7 @@ import {
   TAG_NAMES,
   U_CONTRACT_ID,
   VAULT_ADDRESS,
+  secondInMS,
 } from './constants';
 import {
   IContractEdge,
@@ -206,6 +207,32 @@ const QUERY_TXS_OWNERS = gql`
             address
             key
           }
+        }
+      }
+    }
+  }
+`;
+
+const STAMPS_QUERY = gql`
+  transactions(
+    tags:[
+      {name: "Protocol-Name", values: ["Stamp"]},
+      {name: "Data-Source", values: $txs}
+    ]
+    after: $after
+    first: $first
+  ) {
+    pageInfo {
+      hasNextPage
+    }
+    edges {
+      cursor
+      node {
+        id
+        owner { address }
+        tags {
+          name
+          value
         }
       }
     }
@@ -415,7 +442,7 @@ const checkLastRequest = async (
   modelCreator: string,
   isStableDiffusion = false,
 ) => {
-  const nRequestToValidate = 2;
+  const nRequestToValidate = 1; // check only last request
   const { query, variables } = getRequestsQuery(
     undefined,
     scriptName,
@@ -434,12 +461,12 @@ const checkLastRequest = async (
 
   const validTxs: IEdge[] = [];
 
-  // ignore most recent request
   const mutatableData = [...data.transactions.edges];
+  /* // ignore most recent request
   // requests are ordered by most recent first, reverse so most recent is last element
   mutatableData.reverse();
   // remove most recent request
-  mutatableData.pop();
+  mutatableData.pop(); */
 
   // validate all other requests
   for (const requestTx of mutatableData) {
@@ -861,8 +888,43 @@ export const getOperatorQueryForScript = (
   };
 };
 
+export const getValidOperatorProofsQuery = (
+  operatorAddrs: string[],
+  first = DEFAULT_PAGE_SIZE,
+  after?: string,
+) => {
+  const tags = [
+    { name: 'Protocol-Name', values: [PROTOCOL_NAME] },
+    // { name: 'Protocol-Version', value: PROTOCOL_VERSION} ,
+    { name: 'Operation-Name', values: ['Operator Active Proof'] },
+  ];
+
+  if (operatorAddrs.length > 0) {
+    return {
+      query: FIND_BY_TAGS_WITH_OWNERS,
+      variables: {
+        owners: operatorAddrs,
+        tags,
+        first,
+        after,
+      },
+    };
+  }
+
+  return {
+    query: FIND_BY_TAGS,
+    variables: {
+      tags,
+      first,
+      after,
+    },
+  };
+};
+
 export const operatorsFilter = async (data: IContractEdge[]) => {
   const filtered: IContractEdge[] = [];
+
+  // check if has proof of life
   for (const el of data) {
     const sequencerId = findTag(el, 'sequencerTxId') as string;
 
@@ -875,7 +937,34 @@ export const operatorsFilter = async (data: IContractEdge[]) => {
     }
   }
 
-  return filtered;
+  // check operator proofs on filtered operators
+  const operatorAddrs = filtered.map((el) => findTag(el, 'sequencerOwner') as string);
+  const operatorProofsQueryParams = getValidOperatorProofsQuery(operatorAddrs, 1);
+  const result = await runQuery(
+    operatorProofsQueryParams.query,
+    operatorProofsQueryParams.variables,
+  );
+  const validProofs = result.transactions.edges.filter((el) => {
+    try {
+      const halfHourAgoSeconds = Date.now() - 32 * 60; // add 2 minutes margin
+      const proofTimestamp = parseInt(findTag(el, 'unixTime') as string, 10);
+      const proofOwner = el.node.owner.address;
+      return (
+        proofTimestamp > halfHourAgoSeconds &&
+        proofTimestamp <= Date.now() / secondInMS &&
+        operatorAddrs.includes(proofOwner)
+      ); // return only proofs that were submitted in alst 32 minutes by operator addresses
+    } catch (err) {
+      logger.error((err as Error).message);
+      return false;
+    }
+  });
+  const validProofOwners = validProofs.map((el) => el.node.owner.address);
+
+  // return only operators with valid proofs
+  return filtered.filter((el) =>
+    validProofOwners.includes(findTag(el, 'sequencerOwner') as string),
+  );
 };
 
 export const getLastConversationId = async (userAddr: string, script: FairScript) => {
@@ -1025,4 +1114,15 @@ export const runQuery = async (query: DocumentNode, variables: any) => {
   });
 
   return data;
+};
+
+export const getStampsQuery = (txs: string[], first = DEFAULT_PAGE_SIZE, after?: string) => {
+  return {
+    query: STAMPS_QUERY,
+    variables: {
+      txs,
+      first,
+      after,
+    },
+  };
 };
