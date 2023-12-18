@@ -940,7 +940,7 @@ export const operatorsFilter = async (data: IContractEdge[]) => {
 
   // check operator proofs on filtered operators
   const operatorAddrs = filtered.map((el) => findTag(el, 'sequencerOwner') as string);
-  const operatorProofsQueryParams = getValidOperatorProofsQuery(operatorAddrs, 1);
+  const operatorProofsQueryParams = getValidOperatorProofsQuery(operatorAddrs, 100);
   const result = await runQuery(
     operatorProofsQueryParams.query,
     operatorProofsQueryParams.variables,
