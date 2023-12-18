@@ -14,12 +14,12 @@
  */
 
 import { JWKInterface } from 'warp-contracts';
-import { NODE2_BUNDLR_URL } from '../../common/utils/constants';
+import { AR_IO_UPLOAD_URL } from '../../common/utils/constants';
 import Irys from '@irys/sdk';
 
 export const initIrys = async (jwk?: JWKInterface) => {
   const irys = new Irys({
-    url: NODE2_BUNDLR_URL,
+    url: AR_IO_UPLOAD_URL,
     token: 'arweave',
     key: jwk || window.arweaveWallet,
   });
