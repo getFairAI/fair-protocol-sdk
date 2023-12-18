@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-import Bundlr from '@bundlr-network/client/build/cjs/cjsIndex';
 import fs from 'fs';
 import { glob } from 'glob';
 import { default as Pino } from 'pino';
+import Irys from '@irys/sdk';
 
 export const logger = Pino({
   name: 'Fair-SDK Deploy',
@@ -32,18 +32,18 @@ const main = async () => {
   // the commented out line below to create a new Bundlr object.
   // const bundlr = new Bundlr("http://node1.bundlr.network", "arweave", jwk);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const bundlr = new Bundlr('https://node2.bundlr.network', 'arweave', jwk ); // use node2 for free uploads up to 100kb
+  const irys = new Irys({ url: 'https://up.arweave.net', token: 'arweave', key: jwk }); // use ario for free uploads
   
   // Get loaded balance in atomic units
-  const atomicBalance = await bundlr.getLoadedBalance();
+  const atomicBalance = await irys.getLoadedBalance();
   logger.info(`node balance (atomic units) = ${atomicBalance}`);
   
   // Convert balance to an easier to read format
-  const convertedBalance = bundlr.utils.unitConverter(atomicBalance);
+  const convertedBalance = irys.utils.unitConverter(atomicBalance);
   logger.info(`node balance (converted) = ${convertedBalance}`);
   
   // Print your wallet address
-  logger.info(`wallet address = ${bundlr.address}`);
+  logger.info(`wallet address = ${irys.address}`);
   // all js files, but don't look in node_modules
   const sdkFiles = await glob('**/*.tgz', { ignore: [ 'node_modules/**', 'src/**', 'dist/**' ] });
   if (sdkFiles.length > 1) {
@@ -66,7 +66,7 @@ const main = async () => {
     { name: 'Type', value: 'zip' },
   ];
 
-  const response = await bundlr.uploadFile(sdkFiles[0], { tags });
+  const response = await irys.uploadFile(sdkFiles[0], { tags });
   logger.info(`SDK Uploaded https://arweave.net/${response?.id}`);
 };
 

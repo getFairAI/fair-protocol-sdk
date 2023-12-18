@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-import type NodeBundlr from '@bundlr-network/client/build/cjs/node/bundlr';
 import { logger } from '../../common/utils/common';
 import { FairModel } from '../../common/classes/model';
 import { FairOperator } from '../../common/classes/operator';
@@ -21,6 +20,7 @@ import { FairScript } from '../../common/classes/script';
 import { getUploadTags, handlePayment } from '../../common/utils/inference';
 import { Configuration } from '../../common/types/configuration';
 import { getLastConversationId } from '../../common/utils/queries';
+import type Irys from '@irys/sdk';
 
 const inference = async (
   model: FairModel,
@@ -28,7 +28,7 @@ const inference = async (
   operator: FairOperator,
   prompt: string,
   userAddr: string,
-  bundlr: NodeBundlr,
+  irys: Irys,
   configuration: Configuration,
 ) => {
   const conversationId = await getLastConversationId(userAddr, script);
@@ -41,7 +41,7 @@ const inference = async (
     configuration,
   );
   try {
-    const { id: txid } = await bundlr.upload(prompt, { tags });
+    const { id: txid } = await irys.upload(prompt, { tags });
     if (!txid) {
       throw new Error('No txid returned from bundlr');
     }

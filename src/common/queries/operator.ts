@@ -20,6 +20,8 @@ import {
   getOperatorsQuery,
   getOperatorQueryForScript,
   operatorsFilter,
+  runQuery,
+  getStampsQuery,
 } from '../utils/queries';
 import { findTag, getTxOwner, logger } from '../utils/common';
 
@@ -55,7 +57,59 @@ const _filterOperators = async (txs: IContractEdge[]) => {
   logger.debug('Filtering Operators...');
 
   const filtered = await operatorsFilter(txs);
-  return filtered.map((operatorTx) => new FairOperator(operatorTx));
+  // order by stamps
+  const txids = filtered.map((tx) => tx.node.id);
+  const stampsParams = getStampsQuery(txids);
+  let hasNextPage = false;
+  let stampTxs: IEdge[] = [];
+
+  do {
+    logger.debug('Fetching stamps');
+    const after = hasNextPage ? stampTxs[stampTxs.length - 1].cursor : undefined;
+
+    const result = await runQuery(stampsParams.query, {
+      ...stampsParams.variables,
+      after, // override after
+    });
+
+    stampTxs = stampTxs.concat(result.transactions.edges);
+    hasNextPage = result.transactions.pageInfo.hasNextPage;
+    if (hasNextPage) {
+      logger.debug('Fetching next page of stamps');
+    } else {
+      logger.debug('No more pages of stamps to fetch');
+    }
+  } while (hasNextPage);
+
+  // group by source (aka stamped tx)
+  const grouped = stampTxs.reduce((acc, tx) => {
+    const source = findTag(tx, 'dataSource') as string;
+
+    if (acc[source]) {
+      acc[source].push(tx);
+    } else {
+      acc[source] = [tx];
+    }
+    return acc;
+  }, {} as Record<string, IEdge[]>);
+
+  // filter duplicate owners
+  const stampsCount = Object.keys(grouped).reduce((acc, txid) => {
+    const uniqueOwners = new Set<string>(grouped[txid].map((tx) => getTxOwner(tx)));
+
+    acc[txid] = uniqueOwners.size;
+    return acc;
+  }, {} as { [key: string]: number });
+
+  // returne filtered operators sorted by stamps
+  return filtered
+    .sort((a, b) => {
+      const aTxid = a.node.id;
+      const bTxid = b.node.id;
+
+      return stampsCount[aTxid] - stampsCount[bTxid];
+    })
+    .map((operatorTx) => new FairOperator(operatorTx));
 };
 
 const _listOperatorsWithScriptId = async (scriptId?: string) => {

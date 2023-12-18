@@ -14,7 +14,6 @@
  */
 
 import fs from 'node:fs';
-import type NodeBundlr from '@bundlr-network/client/build/cjs/node/bundlr';
 import { JWKInterface } from 'warp-contracts';
 import { inference } from './actions/inference';
 import {
@@ -25,7 +24,7 @@ import {
   U_DIVIDER,
 } from '../common/utils/constants';
 import { jwkToAddress, getArBalance } from './utils/arweave';
-import { initBundlr } from './utils/bundlr';
+import { initIrys } from './utils/irys';
 import { findTag, logger } from '../common/utils/common';
 import { getById } from '../common/utils/queries';
 import { connectToU, getUBalance } from '../common/utils/warp';
@@ -43,6 +42,7 @@ import * as inferenceUtils from '../common/utils/inference';
 import * as commonUtils from '../common/utils/common';
 import * as warpUtils from '../common/utils/warp';
 import * as constants from '../common/utils/constants';
+import type Irys from '@irys/sdk';
 
 const walletError = 'Wallet not set';
 
@@ -53,7 +53,7 @@ abstract class FairSDK {
   private static _operator?: FairOperator;
   private static _wallet: JWKInterface;
   private static _address: string;
-  private static _bundlr: NodeBundlr;
+  private static _irys: Irys;
 
   public static get model() {
     return this._model;
@@ -229,7 +229,7 @@ abstract class FairSDK {
 
     this._address = ''; // reset address
     connectToU(this._wallet);
-    this._bundlr = await initBundlr(this._wallet);
+    this._irys = await initIrys(this._wallet);
   };
 
   public static getArBalance = async () => {
@@ -266,7 +266,7 @@ abstract class FairSDK {
       throw new Error(walletError);
     }
 
-    if (!this._bundlr) {
+    if (!this._irys) {
       throw new Error('Bundlr not initialized');
     }
 
@@ -288,7 +288,7 @@ abstract class FairSDK {
         this._operator,
         content,
         this._address,
-        this._bundlr,
+        this._irys,
         configuration,
       );
       logger.info(`Inference result: ${JSON.stringify(result)}`);

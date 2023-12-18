@@ -107,6 +107,7 @@ export const TAG_NAMES = {
   sequencerTxId: 'Sequencer-Tx-Id',
   generateAssets: 'Generate-Assets',
   rareweaveConfig: 'Rareweave-Config',
+  dataSource: 'Data-Source',
 };
 
 export const TX_ORIGIN_NODE = 'Fair Protocol SDK';
@@ -169,10 +170,7 @@ export const AVATAR_ATTACHMENT = 'avatar';
 export const NOTES_ATTACHMENT = 'notes';
 
 // misc
-export const DEV_BUNDLR_URL = 'https://devnet.bundlr.network/';
-export const NODE1_BUNDLR_URL = 'https://node1.bundlr.network';
-export const NODE2_BUNDLR_URL = 'https://node2.bundlr.network/';
-
+export const AR_IO_UPLOAD_URL = 'https://up.arweave.net/';
 export const DEV_ARWEAVE_URL = 'https://arweave.dev';
 export const NET_ARWEAVE_URL = 'https://arweave.net';
 
