@@ -947,7 +947,7 @@ export const operatorsFilter = async (data: IContractEdge[]) => {
   );
   const validProofs = result.transactions.edges.filter((el) => {
     try {
-      const halfHourAgoSeconds = Date.now() - 32 * 60; // add 2 minutes margin
+      const halfHourAgoSeconds = Date.now() / secondInMS - 32 * 60; // add 2 minutes margin
       const proofTimestamp = parseInt(findTag(el, 'unixTime') as string, 10);
       const proofOwner = el.node.owner.address;
       return (
