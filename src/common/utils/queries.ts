@@ -214,25 +214,26 @@ const QUERY_TXS_OWNERS = gql`
 `;
 
 const STAMPS_QUERY = gql`
-  transactions(
-    tags:[
-      {name: "Protocol-Name", values: ["Stamp"]},
-      {name: "Data-Source", values: $txs}
-    ]
-    after: $after
-    first: $first
-  ) {
-    pageInfo {
-      hasNextPage
-    }
-    edges {
-      cursor
-      node {
-        id
-        owner { address }
-        tags {
-          name
-          value
+  query QUERY_STAMPS($txs: [ID!], $first: Int!, $after: string) {
+    transactions(
+      tags: [{ name: "Protocol-Name", values: ["Stamp"] }, { name: "Data-Source", values: $txs }]
+      after: $after
+      first: $first
+    ) {
+      pageInfo {
+        hasNextPage
+      }
+      edges {
+        cursor
+        node {
+          id
+          owner {
+            address
+          }
+          tags {
+            name
+            value
+          }
         }
       }
     }
