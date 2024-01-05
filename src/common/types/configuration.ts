@@ -24,4 +24,5 @@ export interface Configuration {
   rareweaveConfig?: {
     royalty: number;
   };
+  requestCaller?: string;
 }

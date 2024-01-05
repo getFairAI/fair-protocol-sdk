@@ -109,6 +109,38 @@ await FairSDKWeb.use('operator', 'IGpjxRSgZoghaxZ-arElfMI2cRaXWPh34MGzOe8NTsE');
 await FairSDKWeb.prompt('This is a test');
 ```
 
+* Prompt configuration
+
+```ts
+// overriding a single field in configuration
+
+// override request Caller
+await FairSDK.prompt('this is a test', {
+  ...FairSDK.constants.DEFAULT_PROMPT_CONFIGURATION,
+  requestCaller: 'ExampleCallerAddress'
+});
+
+// use full custom configuration
+await FairSDK.prompt('this is a test', {
+  requestCaller: 'ExampleCallerAddress',
+  generateAssets: 'rareweave';
+  assetNames: [ 'Asset #1', 'Asset #2' ], // one name per asset, if number of assets generated is bigger than names provided, names will be repeated in order
+  customTags: [
+    { name: 'Custom-Tag#1', value: 'Custom Value #1'},
+  ],
+  negativePrompt: 'ugly, bad hands, ...',
+  nImages: 1, // 1- 10
+  title: 'Title', // 'Title' tag -> will be applied to all assets
+  description: 'Some Description'; // 'Title' tag -> will be applied to all assets
+  // rareweave config will only be used if 'generateAssets' is 'rareweave'
+  rareweaveConfig: {
+    
+    royalty: 10; // 0-100 %
+  },
+  requestCaller: 'ExampleCallerAddress';
+});
+```
+
 ### Utilities
 
 ```ts

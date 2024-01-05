@@ -221,7 +221,7 @@ export default abstract class FairSDKWeb {
 
   public static prompt = async (
     content: string,
-    configuration: Configuration = { generateAssets: 'fair-protocol' },
+    configuration: Configuration = constants.DEFAULT_PROMPT_CONFIGURATION,
   ) => {
     if (!this._arweave) {
       throw new Error("Arweave not initialized. Please run 'FairSDK.init()' first.");

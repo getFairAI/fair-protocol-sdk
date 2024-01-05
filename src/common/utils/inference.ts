@@ -154,7 +154,7 @@ export const addRareweaveTags = (
   }
 };
 
-const addConfigTags = (tags: ITag[], configuration: Configuration) => {
+const addConfigTags = (tags: ITag[], configuration: Configuration, userAddr: string) => {
   if (configuration.assetNames) {
     tags.push({ name: TAG_NAMES.assetNames, value: JSON.stringify(configuration.assetNames) });
   }
@@ -184,6 +184,12 @@ const addConfigTags = (tags: ITag[], configuration: Configuration) => {
       name: TAG_NAMES.rareweaveConfig,
       value: JSON.stringify(configuration.rareweaveConfig),
     });
+  }
+
+  if (configuration.requestCaller) {
+    tags.push({ name: TAG_NAMES.requestCaller, value: configuration.requestCaller });
+  } else {
+    tags.push({ name: TAG_NAMES.requestCaller, value: userAddr });
   }
 };
 
@@ -271,7 +277,7 @@ export const handlePayment = async (
   const usdCost = (await getUsdCost(uCost)).toFixed(nDigits);
 
   return {
-    totalUCost: uCost,
+    totalUCost: uCost.toFixed(nDigits),
     totalUsdCost: usdCost,
     requestId: bundlrId,
     operatorPaymentTx,
@@ -312,7 +318,7 @@ export const getUploadTags = (
     tags.push({ name: TAG_NAMES.txOrigin, value: TX_ORIGIN_WEB });
   }
 
-  addConfigTags(tags, configuration);
+  addConfigTags(tags, configuration, userAddr);
 
   addAtomicAssetTags(tags, userAddr, 'Fair Protocol Prompt Atomic Asset', 'FPPAA');
 

@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { Configuration } from '../types/configuration';
+
 export const VAULT_ADDRESS = 'tXd-BOaxmxtgswzwMLnryROAYlX5uDC9-XK2P4VNCQQ';
 export const MARKETPLACE_ADDRESS = 'RQFarhgXPXYkgRM0Lzv088MllseKQWEdnEiRUggteIo';
 
@@ -108,6 +110,7 @@ export const TAG_NAMES = {
   generateAssets: 'Generate-Assets',
   rareweaveConfig: 'Rareweave-Config',
   dataSource: 'Data-Source',
+  requestCaller: 'Request-Caller',
 };
 
 export const TX_ORIGIN_NODE = 'Fair Protocol SDK';
@@ -252,3 +255,5 @@ const kb = 1024;
 const maxKb = 100;
 
 export const MAX_MESSAGE_SIZE = kb * maxKb;
+
+export const DEFAULT_PROMPT_CONFIGURATION: Configuration = { generateAssets: 'fair-protocol' };
