@@ -260,7 +260,7 @@ abstract class FairSDK {
 
   public static prompt = async (
     content: string,
-    configuration: Configuration = { generateAssets: 'fair-protocol' },
+    configuration: Configuration = constants.DEFAULT_PROMPT_CONFIGURATION,
   ) => {
     if (!this._address || !this._wallet) {
       throw new Error(walletError);
