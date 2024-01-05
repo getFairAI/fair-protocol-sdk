@@ -52,7 +52,7 @@ import {
 } from './common';
 import { isUTxValid } from './warp';
 import { FairScript } from '../classes/script';
-import { ApolloClient, DocumentNode, InMemoryCache, gql } from '@apollo/client/core';
+import { ApolloClient, DocumentNode, FetchPolicy, InMemoryCache, gql } from '@apollo/client/core';
 
 const DEFAULT_PAGE_SIZE = 10;
 const RADIX = 10;
@@ -1108,10 +1108,14 @@ export const getResponsesQuery = (
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const runQuery = async (query: DocumentNode, variables: any) => {
+export const runQuery = async (query: DocumentNode, variables: any, fetchPolicy?: FetchPolicy) => {
   const { data }: { data: IQueryResult } = await apolloClient.query({
     query,
     variables,
+    ...(fetchPolicy && {
+      fetchPolicy,
+      nextFetchPolicy: fetchPolicy,
+    }), // override fetchPolicy & nextFetchPolicy if provided
   });
 
   return data;
