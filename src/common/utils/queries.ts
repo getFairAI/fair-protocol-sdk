@@ -214,25 +214,26 @@ const QUERY_TXS_OWNERS = gql`
 `;
 
 const STAMPS_QUERY = gql`
-  transactions(
-    tags:[
-      {name: "Protocol-Name", values: ["Stamp"]},
-      {name: "Data-Source", values: $txs}
-    ]
-    after: $after
-    first: $first
-  ) {
-    pageInfo {
-      hasNextPage
-    }
-    edges {
-      cursor
-      node {
-        id
-        owner { address }
-        tags {
-          name
-          value
+  query QUERY_STAMPS($txs: [ID!], $first: Int!, $after: string) {
+    transactions(
+      tags: [{ name: "Protocol-Name", values: ["Stamp"] }, { name: "Data-Source", values: $txs }]
+      after: $after
+      first: $first
+    ) {
+      pageInfo {
+        hasNextPage
+      }
+      edges {
+        cursor
+        node {
+          id
+          owner {
+            address
+          }
+          tags {
+            name
+            value
+          }
         }
       }
     }
@@ -939,14 +940,14 @@ export const operatorsFilter = async (data: IContractEdge[]) => {
 
   // check operator proofs on filtered operators
   const operatorAddrs = filtered.map((el) => findTag(el, 'sequencerOwner') as string);
-  const operatorProofsQueryParams = getValidOperatorProofsQuery(operatorAddrs, 1);
+  const operatorProofsQueryParams = getValidOperatorProofsQuery(operatorAddrs, 100);
   const result = await runQuery(
     operatorProofsQueryParams.query,
     operatorProofsQueryParams.variables,
   );
   const validProofs = result.transactions.edges.filter((el) => {
     try {
-      const halfHourAgoSeconds = Date.now() - 32 * 60; // add 2 minutes margin
+      const halfHourAgoSeconds = Date.now() / secondInMS - 32 * 60; // add 2 minutes margin
       const proofTimestamp = parseInt(findTag(el, 'unixTime') as string, 10);
       const proofOwner = el.node.owner.address;
       return (
