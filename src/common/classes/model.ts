@@ -32,6 +32,7 @@ export class FairModel {
   private readonly _rawTx: IContractEdge | IEdge;
   private readonly _paymentId: string;
   private readonly _timestamp: number;
+  private readonly _category: string;
 
   constructor(tx: IContractEdge | IEdge) {
     const txid = findTag(tx, 'modelTransaction');
@@ -45,6 +46,7 @@ export class FairModel {
     this._rawTx = tx;
     this._paymentId = tx.node.id;
     this._timestamp = parseInt(findTag(tx, 'unixTime') as string, 10);
+    this._category = findTag(tx, 'modelCategory') as string;
   }
 
   public get owner() {
@@ -69,5 +71,9 @@ export class FairModel {
 
   public get timestamp() {
     return this._timestamp;
+  }
+
+  public get category() {
+    return this._category;
   }
 }

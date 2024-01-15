@@ -29,6 +29,8 @@ Or Import For Browser
 import FairSDKWeb from '@fair-protocol/sdk/web';
 ```
 
+**NOTE:** Please use Warp-Contracts v1.4.5
+
 ### Query API
 
 **NOTE:** All Queries methods have same usage for web and node
@@ -78,6 +80,30 @@ const nRequests = 10; // number of max txs to get
 const allResponses = await FairSDK.query.getAllResponses(nRequests);
 ```
 
+* Unified Search Utility
+
+```ts
+// basic search without filtering
+// will return all available models, scripts and operators according to Fair Protocol rules
+await FairSDK.query.search();
+
+// Get only models
+await FairSDK.query.search({ typeFilter: ['model'] });
+
+// Get models and scripts
+await FairSDK.query.search({ typeFilter: ['model', 'scripts'] });
+
+
+// Get By model Type
+await FairSDK.query.search({ modelCategory: [ 'image' ] });
+
+// Filter with custom tags
+await FairSDK.query.search({ tags: [ { name: 'Tag-A', value: 'value' } ] });
+
+// Filter by Owners
+await FairSDK.query.search({ owners: [ 'address' ] });
+```
+
 ### Inference
 
 * Execute Prompt For Node
@@ -101,6 +127,7 @@ const arweave = Arweave.init();
 
 // init SDK with created arweave instance
 await FairSDKWeb.init(arweave); // load address
+await FairSDKWeb.connectWallet(); // connect web browser wallet
 
 await FairSDKWeb.use('model', 'uVDgZu7c78Ro2RuPS6-fqF75VoShO8CIKSMrVe9uAfw'); // use model by payment txid
 await FairSDKWeb.use('script', '1Ra-E9rYvcShaFRqp38Lkf1SP1FFDtYggZILFpggtNE'); // use script by payment txid

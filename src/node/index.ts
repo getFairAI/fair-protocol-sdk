@@ -34,6 +34,7 @@ import { FairScript } from '../common/classes/script';
 import { listModels } from '../common/queries/model';
 import { listOperators } from '../common/queries/operator';
 import { listScripts } from '../common/queries/script';
+import { search } from './../common/queries/search';
 import { IEdge, IContractEdge, logLevels } from '../common/types/arweave';
 import { Configuration } from '../common/types/configuration';
 import { getRequests, getResponses } from '../common/queries/inference';
@@ -84,6 +85,7 @@ abstract class FairSDK {
 
   public static get query() {
     return {
+      search,
       listModels,
       listScripts,
       listOperators,

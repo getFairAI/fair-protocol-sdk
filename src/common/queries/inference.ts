@@ -92,7 +92,7 @@ export const getRequests = async (
         variables.after = lastPaginationCursor;
       }
 
-      const data: IQueryResult = await runQuery(query, variables);
+      const data: IQueryResult = await runQuery(query, variables, 'network-only'); // network-only to always fetch latest requests
 
       hasNextPage = data.transactions.pageInfo.hasNextPage;
       lastPaginationCursor = data.transactions.edges[data.transactions.edges.length - 1].cursor;
@@ -109,7 +109,7 @@ export const getRequests = async (
       currenctConversationId,
       first,
     );
-    const results = await runQuery(query, variables);
+    const results = await runQuery(query, variables, 'network-only');
 
     return results.transactions.edges;
   }
