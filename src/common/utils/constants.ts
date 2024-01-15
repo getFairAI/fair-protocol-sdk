@@ -111,6 +111,7 @@ export const TAG_NAMES = {
   rareweaveConfig: 'Rareweave-Config',
   dataSource: 'Data-Source',
   requestCaller: 'Request-Caller',
+  modelCategory: 'Model-Category',
 };
 
 export const TX_ORIGIN_NODE = 'Fair Protocol SDK';

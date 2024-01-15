@@ -20,6 +20,8 @@ import { findTag, getTxOwner } from '../utils/common';
  * @description Class to wrap a Fair Protocol Script tx with easy to access proeprties
  * @property {string} owner - Owner of the script
  * @property {string} name - Name of the script
+ * @property {string} output - Output type of the script
+ * @property {string} isStableDiffusion - If the script is for stable diffusion Models
  * @property {string} txid - Transaction Id of the script
  * @property {IContractEdge | IEdge} raw - Raw transaction object
  * @property {string} paymentId - Payment Id of the script
@@ -32,6 +34,7 @@ export class FairScript {
   private readonly _rawTx: IContractEdge | IEdge;
   private readonly _paymentId: string;
   private readonly _timestamp: number;
+  private readonly _output: string;
   private readonly _isStableDiffusion: boolean;
 
   constructor(tx: IContractEdge | IEdge) {
@@ -46,6 +49,7 @@ export class FairScript {
     this._rawTx = tx;
     this._paymentId = tx.node.id;
     this._timestamp = parseInt(findTag(tx, 'unixTime') as string, 10);
+    this._output = findTag(tx, 'output') as string;
     this._isStableDiffusion = findTag(tx, 'outputConfiguration') === 'stable-diffusion';
   }
 
@@ -71,6 +75,10 @@ export class FairScript {
 
   public get timestamp() {
     return this._timestamp;
+  }
+
+  public get output() {
+    return this._output;
   }
 
   public get isStableDiffusion() {
