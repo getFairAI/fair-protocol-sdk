@@ -78,6 +78,30 @@ const nRequests = 10; // number of max txs to get
 const allResponses = await FairSDK.query.getAllResponses(nRequests);
 ```
 
+* Unified Search Utility
+
+```ts
+// basic search without filtering
+// will return all available models, scripts and operators according to Fair Protocol rules
+await FairSDK.query.search();
+
+// Get only models
+await FairSDK.query.search({ typeFilter: ['model'] });
+
+// Get models and scripts
+await FairSDK.query.search({ typeFilter: ['model', 'scripts'] });
+
+
+// Get By model Type
+await FairSDK.query.search({ modelCategory: [ 'image' ] });
+
+// Filter with custom tags
+await FairSDK.query.search({ tags: [ { name: 'Tag-A', value: 'value' } ] });
+
+// Filter by Owners
+await FairSDK.query.search({ owners: [ 'address' ] });
+```
+
 ### Inference
 
 * Execute Prompt For Node
