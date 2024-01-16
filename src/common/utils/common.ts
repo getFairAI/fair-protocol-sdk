@@ -99,12 +99,12 @@ export const filterPreviousVersions = <T extends Array<IContractEdge | IEdge>>(d
   ) as T;
 };
 
-export const getArPriceUSD = async () => {
+export const getUPriceUSD = async () => {
   const price = await redstone.getPrice('AR');
   return price.value;
 };
 
 export const getUsdCost = async (cost: number) => {
-  const arPrice = await getArPriceUSD();
+  const arPrice = await getUPriceUSD();
   return cost * arPrice;
 };
