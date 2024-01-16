@@ -100,7 +100,7 @@ export const filterPreviousVersions = <T extends Array<IContractEdge | IEdge>>(d
 };
 
 export const getUPriceUSD = async () => {
-  const price = await redstone.getPrice('AR');
+  const price = await redstone.getPrice('U');
   return price.value;
 };
 
