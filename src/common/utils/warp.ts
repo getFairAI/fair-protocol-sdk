@@ -80,3 +80,10 @@ export const isUTxValid = async (sequencerTxID?: string) => {
     return false;
   }
 };
+
+export const getCurrentHeight = async () => {
+  const res = await fetch('https://gateway.warp.cc/gateway/arweave/block');
+  const { height }: { height: number } = await res.json();
+
+  return height;
+};

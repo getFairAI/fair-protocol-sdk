@@ -50,16 +50,9 @@ import {
   findTag,
   logger,
 } from './common';
-import { isUTxValid } from './warp';
+import { getCurrentHeight, isUTxValid } from './warp';
 import { FairScript } from '../classes/script';
 import { ApolloClient, DocumentNode, FetchPolicy, InMemoryCache, gql } from '@apollo/client/core';
-import Arweave from 'arweave';
-
-const arweave = Arweave.init({
-  host: NET_ARWEAVE_URL.split('//')[1],
-  port: 443,
-  protocol: 'https',
-});
 
 const DEFAULT_PAGE_SIZE = 10;
 const RADIX = 10;
@@ -263,19 +256,6 @@ const STAMPS_QUERY = gql`
 
 const inputFnName = 'transfer';
 
-// helper functions
-export const getByIds = async (txids: string[]) => {
-  const { data }: { data: IQueryResult } = await apolloClient.query({
-    query: QUERY_TX_BY_IDS,
-    variables: {
-      ids: txids,
-      first: txids.length,
-    },
-  });
-
-  return data.transactions.edges;
-};
-
 export const getById = async (txid: string) => {
   const { data }: { data: IQueryResult } = await apolloClient.query({
     query: QUERY_TX_BY_ID,
@@ -310,58 +290,6 @@ export const findByTags = async (tags: ITagFilter[], first: number, after?: stri
   });
 
   return data;
-};
-
-export const getTxOwners = async (txids: string[]) => {
-  const { data }: { data: IQueryResult } = await apolloClient.query({
-    query: QUERY_TXS_OWNERS,
-    variables: {
-      ids: txids,
-      first: txids.length,
-    },
-  });
-
-  return data.transactions.edges.map((el: IEdge) => el.node.owner.address);
-};
-
-export const getTxsWithOwners = async (tags: ITagFilter[], owners: string[], first: number) => {
-  const txs: IEdge[] = [];
-  let hasNextPage = false;
-  let lastPaginationCursor;
-
-  if (first <= 0) {
-    // if first is 0 or negative, fetch everything
-    first = Math.min();
-  } else {
-    // ignore
-  }
-
-  do {
-    const result = await apolloClient.query({
-      query: FIND_BY_TAGS,
-      variables: {
-        tags,
-        first,
-        after: lastPaginationCursor,
-      },
-    });
-    const data = result.data as IQueryResult;
-
-    for (const tx of data.transactions.edges) {
-      const owner = findTag(tx, 'sequencerOwner') ?? tx.node.owner.address;
-
-      if (owners.includes(owner)) {
-        txs.push(tx);
-      } else {
-        // ignore
-      }
-    }
-
-    hasNextPage = data.transactions.pageInfo.hasNextPage;
-    lastPaginationCursor = data.transactions.edges[data.transactions.edges.length - 1].cursor;
-  } while (txs.length < Math.max() && hasNextPage);
-
-  return txs;
 };
 
 const queryCheckUserPayment = async (
@@ -465,8 +393,7 @@ const checkLastRequest = async (
   isStableDiffusion = false,
 ) => {
   const nRequestToValidate = 1; // check only last request
-  const currentBlock = await arweave.blocks.getCurrent();
-  const currentBlockHeight = currentBlock.height;
+  const currentBlockHeight = await getCurrentHeight();
 
   const { query, variables } = getRequestsQuery(
     undefined,
@@ -484,16 +411,8 @@ const checkLastRequest = async (
   });
 
   const baseFee = parseFloat(operatorFee);
-
   const validTxs: IEdge[] = [];
-
   const mutatableData = [...data.transactions.edges];
-  /* // ignore most recent request
-  // requests are ordered by most recent first, reverse so most recent is last element
-  mutatableData.reverse();
-  // remove most recent request
-  mutatableData.pop(); */
-
   // validate all other requests
   for (const requestTx of mutatableData) {
     const nImages = findTag(requestTx, 'nImages');
