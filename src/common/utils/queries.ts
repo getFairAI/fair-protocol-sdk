@@ -50,7 +50,7 @@ import {
   findTag,
   logger,
 } from './common';
-import { isUTxValid } from './warp';
+import { getCurrentHeight, isUTxValid } from './warp';
 import { FairScript } from '../classes/script';
 import { ApolloClient, DocumentNode, FetchPolicy, InMemoryCache, gql } from '@apollo/client/core';
 
@@ -74,8 +74,14 @@ export const apolloClient = new ApolloClient({
 });
 
 const FIND_BY_TAGS = gql`
-  query FIND_BY_TAGS($tags: [TagFilter!], $first: Int!, $after: String) {
-    transactions(tags: $tags, first: $first, after: $after, sort: HEIGHT_DESC) {
+  query FIND_BY_TAGS($tags: [TagFilter!], $first: Int!, $after: String, $maxBlockHeight: Int) {
+    transactions(
+      tags: $tags
+      first: $first
+      after: $after
+      sort: HEIGHT_DESC
+      block: { max: $maxBlockHeight }
+    ) {
       pageInfo {
         hasNextPage
       }
@@ -103,8 +109,16 @@ const FIND_BY_TAGS_WITH_OWNERS = gql`
     $tags: [TagFilter!]
     $first: Int!
     $after: String
+    $maxBlockHeight: Int
   ) {
-    transactions(owners: $owners, tags: $tags, first: $first, after: $after, sort: HEIGHT_DESC) {
+    transactions(
+      owners: $owners
+      tags: $tags
+      first: $first
+      after: $after
+      sort: HEIGHT_DESC
+      block: { max: $maxBlockHeight }
+    ) {
       pageInfo {
         hasNextPage
       }
@@ -214,7 +228,7 @@ const QUERY_TXS_OWNERS = gql`
 `;
 
 const STAMPS_QUERY = gql`
-  query QUERY_STAMPS($txs: [ID!], $first: Int!, $after: string) {
+  query QUERY_STAMPS($txs: [String!]!, $first: Int!, $after: String) {
     transactions(
       tags: [{ name: "Protocol-Name", values: ["Stamp"] }, { name: "Data-Source", values: $txs }]
       after: $after
@@ -241,19 +255,6 @@ const STAMPS_QUERY = gql`
 `;
 
 const inputFnName = 'transfer';
-
-// helper functions
-export const getByIds = async (txids: string[]) => {
-  const { data }: { data: IQueryResult } = await apolloClient.query({
-    query: QUERY_TX_BY_IDS,
-    variables: {
-      ids: txids,
-      first: txids.length,
-    },
-  });
-
-  return data.transactions.edges;
-};
 
 export const getById = async (txid: string) => {
   const { data }: { data: IQueryResult } = await apolloClient.query({
@@ -289,58 +290,6 @@ export const findByTags = async (tags: ITagFilter[], first: number, after?: stri
   });
 
   return data;
-};
-
-export const getTxOwners = async (txids: string[]) => {
-  const { data }: { data: IQueryResult } = await apolloClient.query({
-    query: QUERY_TXS_OWNERS,
-    variables: {
-      ids: txids,
-      first: txids.length,
-    },
-  });
-
-  return data.transactions.edges.map((el: IEdge) => el.node.owner.address);
-};
-
-export const getTxsWithOwners = async (tags: ITagFilter[], owners: string[], first: number) => {
-  const txs: IEdge[] = [];
-  let hasNextPage = false;
-  let lastPaginationCursor;
-
-  if (first <= 0) {
-    // if first is 0 or negative, fetch everything
-    first = Math.min();
-  } else {
-    // ignore
-  }
-
-  do {
-    const result = await apolloClient.query({
-      query: FIND_BY_TAGS,
-      variables: {
-        tags,
-        first,
-        after: lastPaginationCursor,
-      },
-    });
-    const data = result.data as IQueryResult;
-
-    for (const tx of data.transactions.edges) {
-      const owner = findTag(tx, 'sequencerOwner') ?? tx.node.owner.address;
-
-      if (owners.includes(owner)) {
-        txs.push(tx);
-      } else {
-        // ignore
-      }
-    }
-
-    hasNextPage = data.transactions.pageInfo.hasNextPage;
-    lastPaginationCursor = data.transactions.edges[data.transactions.edges.length - 1].cursor;
-  } while (txs.length < Math.max() && hasNextPage);
-
-  return txs;
 };
 
 const queryCheckUserPayment = async (
@@ -444,6 +393,8 @@ const checkLastRequest = async (
   isStableDiffusion = false,
 ) => {
   const nRequestToValidate = 1; // check only last request
+  const currentBlockHeight = await getCurrentHeight();
+
   const { query, variables } = getRequestsQuery(
     undefined,
     scriptName,
@@ -451,6 +402,7 @@ const checkLastRequest = async (
     operatorAddr,
     undefined,
     nRequestToValidate,
+    currentBlockHeight,
   );
 
   const { data }: { data: IQueryResult } = await apolloClient.query({
@@ -459,22 +411,15 @@ const checkLastRequest = async (
   });
 
   const baseFee = parseFloat(operatorFee);
-
   const validTxs: IEdge[] = [];
-
   const mutatableData = [...data.transactions.edges];
-  /* // ignore most recent request
-  // requests are ordered by most recent first, reverse so most recent is last element
-  mutatableData.reverse();
-  // remove most recent request
-  mutatableData.pop(); */
-
   // validate all other requests
   for (const requestTx of mutatableData) {
     const nImages = findTag(requestTx, 'nImages');
     const userAddr = requestTx.node.owner.address;
 
     let isValidRequest = false;
+    let necessaryResponses;
     if (
       isStableDiffusion &&
       nImages &&
@@ -490,6 +435,7 @@ const checkLastRequest = async (
         actualFee,
         scriptId,
       );
+      necessaryResponses = parseInt(nImages, RADIX);
     } else if (isStableDiffusion) {
       // default nImages
       const defaultNImages = 4;
@@ -503,6 +449,7 @@ const checkLastRequest = async (
         actualFee,
         scriptId,
       );
+      necessaryResponses = defaultNImages;
     } else {
       isValidRequest = await checkUserPaidInferenceFees(
         requestTx.node.id,
@@ -512,10 +459,12 @@ const checkLastRequest = async (
         baseFee,
         scriptId,
       );
+      necessaryResponses = 1;
     }
 
     if (isValidRequest) {
-      const hasAnswered = await hasOperatorAnswered(requestTx, operatorAddr);
+      const requestId = findTag(requestTx, 'inferenceTransaction') ?? requestTx.node.id;
+      const hasAnswered = await hasOperatorAnswered(requestId, operatorAddr, necessaryResponses);
       if (hasAnswered) {
         validTxs.push(requestTx);
       }
@@ -528,8 +477,11 @@ const checkLastRequest = async (
   return validTxs.length === mutatableData.length;
 };
 
-const hasOperatorAnswered = async (request: IEdge | IContractEdge, opAddress: string) => {
-  const requestId = findTag(request, 'inferenceTransaction') ?? request.node.id;
+const hasOperatorAnswered = async (
+  requestId: string,
+  opAddress: string,
+  necessaryResponses: number,
+) => {
   const responseTags: ITagFilter[] = [
     ...DEFAULT_TAGS,
     {
@@ -539,9 +491,16 @@ const hasOperatorAnswered = async (request: IEdge | IContractEdge, opAddress: st
     { name: TAG_NAMES.operationName, values: [SCRIPT_INFERENCE_RESPONSE] },
   ];
 
-  const data: IEdge[] = await getTxWithOwners(responseTags, [opAddress]);
+  const { data } = await apolloClient.query({
+    query: FIND_BY_TAGS_WITH_OWNERS,
+    variables: {
+      tags: responseTags,
+      owners: [opAddress],
+      first: necessaryResponses,
+    },
+  });
 
-  if (data.length === 0) {
+  if (data.transactions.edges.length !== necessaryResponses) {
     return false;
   } else {
     return true;
@@ -1006,6 +965,7 @@ export const getRequestsQuery = (
   scriptOperator?: string,
   currenctConversationId?: number,
   first = DEFAULT_PAGE_SIZE,
+  maxBlockHeight?: number,
   after?: string,
 ) => {
   const tags = [
@@ -1036,6 +996,7 @@ export const getRequestsQuery = (
         tags,
         first,
         after,
+        maxBlockHeight,
       },
     };
   } else {
@@ -1045,6 +1006,7 @@ export const getRequestsQuery = (
         tags,
         first,
         after,
+        maxBlockHeight,
       },
     };
   }
