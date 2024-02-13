@@ -112,6 +112,8 @@ export const TAG_NAMES = {
   dataSource: 'Data-Source',
   requestCaller: 'Request-Caller',
   modelCategory: 'Model-Category',
+  imagesWidth: 'Images-Width',
+  imagesHeight: 'Images-Height',
 };
 
 export const TX_ORIGIN_NODE = 'Fair Protocol SDK';

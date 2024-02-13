@@ -676,8 +676,8 @@ export const modelsFilter = async (data: IContractEdge[]) => {
 
 export const validateModel = async (tx: IContractEdge) => {
   const modelId = findTag(tx, 'modelTransaction') as string;
-  const modelOwner = findTag(tx, 'sequencerOwner') as string;
-  const sequencerId = findTag(tx, 'sequencerTxId') as string;
+  const modelOwner = (findTag(tx, 'sequencerOwner') as string) ?? tx.node.owner.address; // use tx owner if sequencerOwner is not present
+  const sequencerId = (findTag(tx, 'sequencerTxId') as string) ?? tx.node.id; // use tx id if sequencerTxId is not present
 
   const isValidPayment = await isUTxValid(sequencerId);
   if (!isValidPayment) {
@@ -701,8 +701,8 @@ export const validateScript = async (tx: IContractEdge, modelId?: string) => {
   }
 
   const scriptId = findTag(tx, 'scriptTransaction') as string;
-  const scriptOwner = findTag(tx, 'sequencerOwner') as string;
-  const sequencerId = findTag(tx, 'sequencerTxId') as string;
+  const scriptOwner = (findTag(tx, 'sequencerOwner') as string) ?? tx.node.owner.address; // use tx owner if sequencerOwner is not present
+  const sequencerId = (findTag(tx, 'sequencerTxId') as string) ?? tx.node.id; // use tx id if sequencerTxId is not present
 
   const isValidPayment = await isUTxValid(sequencerId);
   if (!isValidPayment) {
@@ -730,7 +730,7 @@ export const validateOperator = async (tx: IContractEdge, scriptId?: string) => 
     return false;
   }
 
-  const sequencerId = findTag(tx, 'sequencerTxId') as string;
+  const sequencerId = (findTag(tx, 'sequencerTxId') as string) ?? tx.node.id; // use tx id if sequencerTxId is not present
 
   const isValidPayment = await isUTxValid(sequencerId);
   if (!isValidPayment) {
@@ -753,8 +753,8 @@ export const scriptsFilter = async (data: IContractEdge[], validateOperators = f
   const filtered: IContractEdge[] = [];
   for (const el of filteredScritps) {
     const scriptId = findTag(el, 'scriptTransaction') as string;
-    const scriptOwner = findTag(el, 'sequencerOwner') as string;
-    const sequencerId = findTag(el, 'sequencerTxId') as string;
+    const scriptOwner = (findTag(el, 'sequencerOwner') as string) ?? el.node.owner.address; // use tx owner if sequencerOwner is not present
+    const sequencerId = (findTag(el, 'sequencerTxId') as string) ?? el.node.id; // use tx id if sequencerTxId is not present
 
     const isValidPayment = await isUTxValid(sequencerId);
 
@@ -886,7 +886,7 @@ export const operatorsFilter = async (data: IContractEdge[]) => {
 
   // check if has proof of life
   for (const el of data) {
-    const sequencerId = findTag(el, 'sequencerTxId') as string;
+    const sequencerId = (findTag(el, 'sequencerTxId') as string) ?? el.node.id; // use tx id if sequencerTxId is not present
 
     const isValidPayment = await isUTxValid(sequencerId);
     if (!isValidPayment) {
@@ -898,7 +898,9 @@ export const operatorsFilter = async (data: IContractEdge[]) => {
   }
 
   // check operator proofs on filtered operators
-  const operatorAddrs = filtered.map((el) => findTag(el, 'sequencerOwner') as string);
+  const operatorAddrs = filtered.map(
+    (el) => (findTag(el, 'sequencerOwner') as string) ?? el.node.owner,
+  );
   const operatorProofsQueryParams = getValidOperatorProofsQuery(operatorAddrs, 100);
   const result = await runQuery(
     operatorProofsQueryParams.query,
@@ -923,7 +925,7 @@ export const operatorsFilter = async (data: IContractEdge[]) => {
 
   // return only operators with valid proofs
   return filtered.filter((el) =>
-    validProofOwners.includes(findTag(el, 'sequencerOwner') as string),
+    validProofOwners.includes((findTag(el, 'sequencerOwner') as string) ?? el.node.owner.address),
   );
 };
 
