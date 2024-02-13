@@ -21,6 +21,8 @@ export interface Configuration {
   nImages?: number;
   title?: string;
   description?: string;
+  width?: number;
+  height?: number;
   rareweaveConfig?: {
     royalty: number;
   };
