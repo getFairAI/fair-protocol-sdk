@@ -175,6 +175,14 @@ const addConfigTags = (tags: ITag[], configuration: Configuration, userAddr: str
     tags.push({ name: TAG_NAMES.nImages, value: configuration.nImages.toString() });
   }
 
+  if (configuration.width && configuration.width > 0) {
+    tags.push({ name: TAG_NAMES.imagesWidth, value: configuration.width.toString() });
+  }
+
+  if (configuration.height && configuration.height > 0) {
+    tags.push({ name: TAG_NAMES.imagesHeight, value: configuration.height.toString() });
+  }
+
   if (configuration.generateAssets && configuration.generateAssets !== 'none') {
     tags.push({ name: TAG_NAMES.generateAssets, value: configuration.generateAssets });
   }
